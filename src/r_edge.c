@@ -30,7 +30,7 @@ low depth complexity -- 1 to 3 or so
 
 this breaks spans at every edge, even hidden ones (bad)
 
-have a sentinal at both ends?
+have a sentinel at both ends?
 #endif
 
 

@@ -547,7 +547,7 @@ void ED_PrintEdicts (void)
 =============
 ED_PrintEdict_f
 
-For debugging, prints a single edicy
+For debugging, prints a single edict
 =============
 */
 void ED_PrintEdict_f (void)

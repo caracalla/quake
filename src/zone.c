@@ -263,11 +263,11 @@ void Z_CheckHeap (void)
 
 //============================================================================
 
-#define	HUNK_SENTINAL	0x1df001ed
+#define	HUNK_SENTINEL	0x1df001ed
 
 typedef struct
 {
-	int		sentinal;
+	int		sentinel;
 	int		size;		// including sizeof(hunk_t), -1 = not allocated
 	char	name[8];
 } hunk_t;
@@ -287,20 +287,22 @@ void R_FreeTextures (void);
 ==============
 Hunk_Check
 
-Run consistancy and sentinal trahing checks
+Run consistency and sentinel trashing checks
 ==============
 */
 void Hunk_Check (void)
 {
 	hunk_t	*h;
 
-	for (h = (hunk_t *)hunk_base ; (byte *)h != hunk_base + hunk_low_used ; )
-	{
-		if (h->sentinal != HUNK_SENTINAL)
-			Sys_Error ("Hunk_Check: trahsed sentinal");
+	h = (hunk_t *)hunk_base;
+
+	while ((byte *)h != hunk_base + hunk_low_used) {
+		if (h->sentinel != HUNK_SENTINEL)
+			Sys_Error ("Hunk_Check: trashed sentinel");
 		if (h->size < 16 || h->size + (byte *)h - hunk_base > hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
-		h = (hunk_t *)((byte *)h+h->size);
+
+		h = (hunk_t *)((byte *)h + h->size);
 	}
 }
 
@@ -352,10 +354,10 @@ void Hunk_Print (qboolean all)
 			break;
 
 	//
-	// run consistancy checks
+	// run consistency checks
 	//
-		if (h->sentinal != HUNK_SENTINAL)
-			Sys_Error ("Hunk_Check: trahsed sentinal");
+		if (h->sentinel != HUNK_SENTINEL)
+			Sys_Error ("Hunk_Check: trahsed sentinel");
 		if (h->size < 16 || h->size + (byte *)h - hunk_base > hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
 
@@ -420,7 +422,7 @@ void *Hunk_AllocName (int size, char *name)
 	memset (h, 0, size);
 
 	h->size = size;
-	h->sentinal = HUNK_SENTINAL;
+	h->sentinel = HUNK_SENTINEL;
 	Q_strncpy (h->name, name, 8);
 
 	return (void *)(h+1);
@@ -511,7 +513,7 @@ void *Hunk_HighAllocName (int size, char *name)
 
 	memset (h, 0, size);
 	h->size = size;
-	h->sentinal = HUNK_SENTINAL;
+	h->sentinel = HUNK_SENTINEL;
 	Q_strncpy (h->name, name, 8);
 
 	return (void *)(h+1);
@@ -531,11 +533,11 @@ void *Hunk_TempAlloc (int size)
 
 	size = (size+15)&~15;
 
-	if (hunk_tempactive)
-	{
-		Hunk_FreeToHighMark (hunk_tempmark);
-		hunk_tempactive = false;
-	}
+	// this is redundant, since Hunk_HighMark does it as well
+	// if (hunk_tempactive) {
+	// 	Hunk_FreeToHighMark (hunk_tempmark);
+	// 	hunk_tempactive = false;
+	// }
 
 	hunk_tempmark = Hunk_HighMark ();
 
@@ -913,7 +915,7 @@ Memory_Init
 void Memory_Init (void *buf, int size)
 {
 	int p;
-	int zonesize = DYNAMIC_SIZE;
+	int zonesize = DYNAMIC_SIZE; // 0xc000: 16^3 = 4096; 4096 * 12 = 49152
 
 	hunk_base = buf;
 	hunk_size = size;
@@ -922,13 +924,14 @@ void Memory_Init (void *buf, int size)
 
 	Cache_Init ();
 	p = COM_CheckParm ("-zone");
-	if (p)
-	{
-		if (p < com_argc-1)
-			zonesize = Q_atoi (com_argv[p+1]) * 1024;
+
+	if (p) {
+		if (p < com_argc - 1)
+			zonesize = Q_atoi (com_argv[p + 1]) * 1024;
 		else
 			Sys_Error ("Memory_Init: you must specify a size in KB after -zone");
 	}
+
 	mainzone = Hunk_AllocName (zonesize, "zone" );
 	Z_ClearZone (mainzone, zonesize);
 }

@@ -431,7 +431,7 @@ float Q_atof (char *str)
 ============================================================================
 */
 
-qboolean        bigendien;
+qboolean        bigendian;
 
 short   (*BigShort) (short l);
 short   (*LittleShort) (short l);
@@ -1081,8 +1081,7 @@ void COM_InitArgv (int argc, char **argv)
 
 	safe = false;
 
-	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ;
-		 com_argc++)
+	for (com_argc=0; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc); com_argc++)
 	{
 		largv[com_argc] = argv[com_argc];
 		if (!Q_strcmp ("-safe", argv[com_argc]))
@@ -1129,7 +1128,7 @@ void COM_Init (char *basedir)
 // set the byte swapping variables in a portable manner
 	if ( *(short *)swaptest == 1)
 	{
-		bigendien = false;
+		bigendian = false;
 		BigShort = ShortSwap;
 		LittleShort = ShortNoSwap;
 		BigLong = LongSwap;
@@ -1139,7 +1138,7 @@ void COM_Init (char *basedir)
 	}
 	else
 	{
-		bigendien = true;
+		bigendian = true;
 		BigShort = ShortNoSwap;
 		LittleShort = ShortSwap;
 		BigLong = LongNoSwap;

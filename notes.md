@@ -226,11 +226,11 @@ typedef enum {false, true}  qboolean;
 
 ```c
 // zone.c
-#define HUNK_SENTINAL   0x1df001ed
+#define HUNK_SENTINEL   0x1df001ed
 
 typedef struct
 {
-    int     sentinal;
+    int     sentinel;
     int     size;       // including sizeof(hunk_t), -1 = not allocated
     char    name[8];
 } hunk_t;
