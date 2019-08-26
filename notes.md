@@ -1,30 +1,48 @@
 # Quake Notes
 
+## global variables and cvars
+
+* common
+	* `char* com_cmdline` (cvar) - all command line arguments that can fit within 255 characters, space delimited
+	* `int com_argc` - MAX_NUM_ARGVS or the total number of arguments, whichever is smaller
+	* `char** com_argv` - basically a copy of argv, with " " as the final element
+
 ## `main`
 
-1. sets quake params (parms) to 0
-1. `COM_InitArgv` inits arguments
-1. sets parms argv and argc with the output from COM_InitArgv
-1. sets parms.memsize according to if GLQUAKE is defined (where is that defined though?)
-    * if `-mem` is in the args, sets parms.memsize according to that instead
-1. allocates parms.membase
-    * this is the only place memory is allocated for the game.  other allocations happen for VCR recording and X video
-1. `fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY)` ???
-    * is 0 file descriptor stdout?
-    * what is `FNDELAY`?
-1. `Host_Init` does a crapload of setup
-1. `Sys_Init` does nothing
-1. game loop starts
-    1. sets time
-    1. `Host_Frame` does everything
+1. Initialization:
+	1. initializes quake params (parms) to 0
+	1. `COM_InitArgv` inits arguments
+	1. sets parms.argv and parms.argc with the output from COM_InitArgv
+	1. sets parms.memsize according to if GLQUAKE is defined (where is that defined though?)
+		* if `-mem` is in the args, sets parms.memsize according to that instead
+	1. allocates parms.membase
+		* this is the only place memory is allocated for the game.  other allocations happen for VCR recording and X video
+	1. `fcntl(0, F_SETFL, fcntl (0, F_GETFL, 0) | FNDELAY)` ???
+		* 0 is stdout
+		* `F_GETFL` reads fd flags
+		* `F_SETFL` sets fd flags
+		* `FNDELAY` sets `read()` to be non-blocking (returns -1 without input)
+	1. `Host_Init` does a crapload of setup
+	1. `Sys_Init` does nothing
+1. Game loop:
+	1. sets time
+	1. `Host_Frame` does everything
 
 ## `COM_InitArgv`
 
 1. for up to 50 (`MAX_NUM_ARGVS`) args, and up to a total of 255 characters (`CMDLINE_LENGTH`), all args are fed into `com_cmdline`, delimited by spaces
 1. all args are fed into `largv`
 1. if `-safe` is passed in, `safeargvs` are added to `largv`
-    * for some reason, a single space string is added to the end of `largv` (`argvdummy`)
-1. `com_argv` is set to `largv`
+	* this is equivalent to passing in:
+		* `-stdvid`
+		* `-nolan`
+		* `-nosound`
+		* `-nocdaudio`
+		* `-nojoy`
+		* `-nomouse`
+		* `-dibonly`
+	* for some reason, a single space string is added to the end of `largv` (`argvdummy`)
+1. `largv` is copied into `com_argv`
 1. `rogue` and `hipnotic` args are checked
 
 ## `COM_CheckParm`
@@ -32,6 +50,7 @@
 Returns the index in `com_argv` of the desired arg, returns 0 if not found
 
 ## `Host_Init`
+
 1. `Memory_Init` - inits the cache and allocates the main memory zone
 1. `Cbuf_Init` - allocates 8192 bytes for the command buffer
 1. `Cmd_Init` - adds commands like exec, echo, alias, cmd, wait
@@ -63,115 +82,116 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 1. sets the hunk low mark?
 1. sets `host_initialized` to true, marking the end of initialization, and preventing any further commands from being added
 
-### Commands Added
+### Commands Added in Host_Init
 * command processing
-    * stuffcmds - `Cmd_StuffCmds_f`
-    * exec - `Cmd_Exec_f`
-    * echo - `Cmd_Echo_f`
-    * alias - `Cmd_Alias_f`
-    * cmd - `Cmd_ForwardToServer`
-    * wait - `Cmd_Wait_f`
+	* stuffcmds - `Cmd_StuffCmds_f`
+	* exec - `Cmd_Exec_f`
+	* echo - `Cmd_Echo_f`
+	* alias - `Cmd_Alias_f`
+	* cmd - `Cmd_ForwardToServer`
+	* wait - `Cmd_Wait_f`
 * view
-    * v_cshift - `V_cshift_f`
-    * bf - `V_BonusFlash_f`
-    * centerview - `V_StartPitchDrift`
+	* v_cshift - `V_cshift_f`
+	* bf - `V_BonusFlash_f`
+	* centerview - `V_StartPitchDrift`
 * filepath
-    * path - `COM_Path_f`
+	* path - `COM_Path_f`
 * host
-    * status - `Host_Status_f`
-    * quit - `Host_Quit_f`
-    * god - `Host_God_f`
-    * notarget - `Host_Notarget_f`
-    * fly - `Host_Fly_f`
-    * map - `Host_Map_f`
-    * restart - `Host_Restart_f`
-    * changelevel - `Host_Changelevel_f`
-    * changelevel2 - `Host_Changelevel2_f` (quake 2 only)
-    * connect - `Host_Connect_f`
-    * reconnect - `Host_Reconnect_f`
-    * name - `Host_Name_f`
-    * noclip - `Host_Noclip_f`
-    * version - `Host_Version_f`
-    * please - `Host_Please_f` (idgods only)
-    * say - `Host_Say_f`
-    * say_team - `Host_Say_Team_f`
-    * tell - `Host_Tell_f`
-    * color - `Host_Color_f`
-    * kill - `Host_Kill_f`
-    * pause - `Host_Pause_f`
-    * spawn - `Host_Spawn_f`
-    * begin - `Host_Begin_f`
-    * prespawn - `Host_PreSpawn_f`
-    * kick - `Host_Kick_f`
-    * ping - `Host_Ping_f`
-    * load - `Host_Loadgame_f`
-    * save - `Host_Savegame_f`
-    * give - `Host_Give_f`
-    * startdemos - `Host_Startdemos_f`
-    * demos - `Host_Demos_f`
-    * stopdemo - `Host_Stopdemo_f`
-    * viewmodel - `Host_Viewmodel_f`
-    * viewframe - `Host_Viewframe_f`
-    * viewnext - `Host_Viewnext_f`
-    * viewprev - `Host_Viewprev_f`
-    * mcache - `Mod_Print`
+	* status - `Host_Status_f`
+	* quit - `Host_Quit_f`
+	* god - `Host_God_f`
+	* notarget - `Host_Notarget_f`
+	* fly - `Host_Fly_f`
+	* map - `Host_Map_f`
+	* restart - `Host_Restart_f`
+	* changelevel - `Host_Changelevel_f`
+	* changelevel2 - `Host_Changelevel2_f` (quake 2 only)
+	* connect - `Host_Connect_f`
+	* reconnect - `Host_Reconnect_f`
+	* name - `Host_Name_f`
+	* noclip - `Host_Noclip_f`
+	* version - `Host_Version_f`
+	* please - `Host_Please_f` (idgods only)
+	* say - `Host_Say_f`
+	* say_team - `Host_Say_Team_f`
+	* tell - `Host_Tell_f`
+	* color - `Host_Color_f`
+	* kill - `Host_Kill_f`
+	* pause - `Host_Pause_f`
+	* spawn - `Host_Spawn_f`
+	* begin - `Host_Begin_f`
+	* prespawn - `Host_PreSpawn_f`
+	* kick - `Host_Kick_f`
+	* ping - `Host_Ping_f`
+	* load - `Host_Loadgame_f`
+	* save - `Host_Savegame_f`
+	* give - `Host_Give_f`
+	* startdemos - `Host_Startdemos_f`
+	* demos - `Host_Demos_f`
+	* stopdemo - `Host_Stopdemo_f`
+	* viewmodel - `Host_Viewmodel_f`
+	* viewframe - `Host_Viewframe_f`
+	* viewnext - `Host_Viewnext_f`
+	* viewprev - `Host_Viewprev_f`
+	* mcache - `Mod_Print`
 * key bindings
-    * bind - `Key_Bind_f`
-    * unbind - `Key_Unbind_f`
-    * unbindall - `Key_Unbindall_f`
+	* bind - `Key_Bind_f`
+	* unbind - `Key_Unbind_f`
+	* unbindall - `Key_Unbindall_f`
 * console
-    * toggleconsole - `Con_ToggleConsole_f`
-    * messagemode - `Con_MessageMode_f`
-    * messagemode2 - `Con_MessageMode2_f`
-    * clear - `Con_Clear_f`
+	* toggleconsole - `Con_ToggleConsole_f`
+	* messagemode - `Con_MessageMode_f`
+	* messagemode2 - `Con_MessageMode2_f`
+	* clear - `Con_Clear_f`
 * menu
-    * togglemenu - `M_ToggleMenu_f`
-    * menu_main - `M_Menu_Main_f`
-    * menu_singleplayer - `M_Menu_SinglePlayer_f`
-    * menu_load - `M_Menu_Load_f`
-    * menu_save - `M_Menu_Save_f`
-    * menu_multiplayer - `M_Menu_MultiPlayer_f`
-    * menu_setup - `M_Menu_Setup_f`
-    * menu_options - `M_Menu_Options_f`
-    * menu_keys - `M_Menu_Keys_f`
-    * menu_video - `M_Menu_Video_f`
-    * help - `M_Menu_Help_f`
-    * menu_quit - `M_Menu_Quit_f`
+	* togglemenu - `M_ToggleMenu_f`
+	* menu_main - `M_Menu_Main_f`
+	* menu_singleplayer - `M_Menu_SinglePlayer_f`
+	* menu_load - `M_Menu_Load_f`
+	* menu_save - `M_Menu_Save_f`
+	* menu_multiplayer - `M_Menu_MultiPlayer_f`
+	* menu_setup - `M_Menu_Setup_f`
+	* menu_options - `M_Menu_Options_f`
+	* menu_keys - `M_Menu_Keys_f`
+	* menu_video - `M_Menu_Video_f`
+	* help - `M_Menu_Help_f`
+	* menu_quit - `M_Menu_Quit_f`
 * edits
-    * edict - `ED_PrintEdict_f`
-    * edicts - `ED_PrintEdicts`
-    * edictcount - `ED_Count`
-    * profile - `PR_Profile_f`
+	* edict - `ED_PrintEdict_f`
+	* edicts - `ED_PrintEdicts`
+	* edictcount - `ED_Count`
+	* profile - `PR_Profile_f`
 * net
-    * slist - `NET_Slist_f`
-    * listen - `NET_Listen_f`
-    * maxplayers - `MaxPlayers_f`
-    * port - `NET_Port_f`
+	* slist - `NET_Slist_f`
+	* listen - `NET_Listen_f`
+	* maxplayers - `MaxPlayers_f`
+	* port - `NET_Port_f`
 * screen
-    * screenshot - `SCR_ScreenShot_f`
-    * sizeup - `SCR_SizeUp_f`
-    * sizedown - `SCR_SizeDown_f`
+	* screenshot - `SCR_ScreenShot_f`
+	* sizeup - `SCR_SizeUp_f`
+	* sizedown - `SCR_SizeDown_f`
 * rendering?
-    * timerefresh - `R_TimeRefresh_f`
-    * pointfile - `R_ReadPointFile_f`
+	* timerefresh - `R_TimeRefresh_f`
+	* pointfile - `R_ReadPointFile_f`
 * sound
-    * play - `S_Play`
-    * playvol - `S_PlayVol`
-    * stopsound - `S_StopAllSoundsC`
-    * soundlist - `S_SoundList`
-    * soundinfo - `S_SoundInfo_f`
+	* play - `S_Play`
+	* playvol - `S_PlayVol`
+	* stopsound - `S_StopAllSoundsC`
+	* soundlist - `S_SoundList`
+	* soundinfo - `S_SoundInfo_f`
 * status bar
-    * +showscores - `Sbar_ShowScores`
-    * -showscores - `Sbar_DontShowScores`
+	* +showscores - `Sbar_ShowScores`
+	* -showscores - `Sbar_DontShowScores`
 * client
-    * entities - `CL_PrintEntities_f`
-    * disconnect - `CL_Disconnect_f`
-    * record - `CL_Record_f`
-    * stop - `CL_Stop_f`
-    * playdemo - `CL_PlayDemo_f`
-    * timedemo - `CL_TimeDemo_f`
+	* entities - `CL_PrintEntities_f`
+	* disconnect - `CL_Disconnect_f`
+	* record - `CL_Record_f`
+	* stop - `CL_Stop_f`
+	* playdemo - `CL_PlayDemo_f`
+	* timedemo - `CL_TimeDemo_f`
 
 ## `_Host_Frame`
+
 1. update random
 1. check if enough time has passed to render a new frame
 1. `Sys_SendKeyEvents` - get new key events from X
@@ -185,9 +205,12 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 1. update audio
 1. lots of time manipulation spread around in here
 
+
+
 # areas of interest:
-* hipnotic
-* rogue
+
+* hipnotic and rogue
+	* these are expansions
 * cvars
 * id386
 
@@ -195,26 +218,24 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 // common.c
 // is this safe?  how could this go wrong?
 // it's safe as long as both strings have null terminators
-int Q_strcmp (char *s1, char *s2)
-{
-    while (1)
-    {
-        if (*s1 != *s2)
-            return -1;              // strings not equal
-        if (!*s1)
-            return 0;               // strings are equal
-        s1++;
-        s2++;
-    }
+int Q_strcmp (char *s1, char *s2) {
+	while (1) {
+		if (*s1 != *s2)
+			return -1;  // strings not equal
+		if (!*s1)
+			return 0;  // strings are equal
+		s1++;
+		s2++;
+	}
 
-    return -1;
+	return -1;
 }
 ```
 
 ```c
 // common.h
 #if !defined BYTE_DEFINED
-typedef unsigned char       byte;
+typedef unsigned char	   byte;
 #define BYTE_DEFINED 1
 #endif
 
@@ -230,28 +251,28 @@ typedef enum {false, true}  qboolean;
 
 typedef struct
 {
-    int     sentinel;
-    int     size;       // including sizeof(hunk_t), -1 = not allocated
-    char    name[8];
+	int	 sentinel;
+	int	 size;	   // including sizeof(hunk_t), -1 = not allocated
+	char	name[8];
 } hunk_t;
 
-byte    *hunk_base;
-int     hunk_size;
+byte	*hunk_base;
+int	 hunk_size;
 
-int     hunk_low_used;
-int     hunk_high_used;
+int	 hunk_low_used;
+int	 hunk_high_used;
 ```
 
 ```c
 // cvar.h
 typedef struct cvar_s
 {
-    char    *name;
-    char    *string;
-    qboolean archive;       // set to true to cause it to be saved to vars.rc
-    qboolean server;        // notifies players when changed
-    float   value;
-    struct cvar_s *next;
+	char	*name;
+	char	*string;
+	qboolean archive;	   // set to true to cause it to be saved to vars.rc
+	qboolean server;		// notifies players when changed
+	float   value;
+	struct cvar_s *next;
 } cvar_t;
 ```
 
@@ -259,12 +280,12 @@ typedef struct cvar_s
 // quakedef.h
 typedef struct
 {
-    char    *basedir;
-    char    *cachedir;      // for development over ISDN lines
-    int     argc;
-    char    **argv;
-    void    *membase;
-    int     memsize;
+	char	*basedir;
+	char	*cachedir;	  // for development over ISDN lines
+	int	 argc;
+	char	**argv;
+	void	*membase;
+	int	 memsize;
 } quakeparms_t;
 ```
 

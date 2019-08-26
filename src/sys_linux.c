@@ -338,19 +338,19 @@ void Sys_HighFPPrecision(void) {}
 void Sys_LowFPPrecision(void) {}
 #endif
 
-int main(int c, char **v) {
+int main(int argc, char **argv) {
 	double time, oldtime, newtime;
 	quakeparms_t parms;
 	extern int vcrFile;
 	extern int recording;
-	int j;
+	int mem_parm;
 
 	// signal(SIGFPE, floating_point_exception_handler);
 	signal(SIGFPE, SIG_IGN);
 
 	memset(&parms, 0, sizeof(parms));
 
-	COM_InitArgv(c, v);
+	COM_InitArgv(argc, argv);
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
@@ -360,12 +360,13 @@ int main(int c, char **v) {
 	parms.memsize = 8 * 1024 * 1024;
 #endif
 
-	j = COM_CheckParm("-mem");
-	if (j) {
-		parms.memsize = (int) (Q_atof(com_argv[j + 1]) * 1024 * 1024);
+	mem_parm = COM_CheckParm("-mem");
+
+	if (mem_parm) {
+		parms.memsize = (int)(Q_atof(com_argv[mem_parm + 1]) * 1024 * 1024);
 	}
 
-	parms.membase = malloc (parms.memsize);
+	parms.membase = malloc(parms.memsize);
 	parms.basedir = basedir;
 	// caching is disabled by default, use -cachedir to enable
 	// parms.cachedir = cachedir;

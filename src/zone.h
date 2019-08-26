@@ -26,7 +26,7 @@ contiguous.  Memory can be allocated from either the low or high end in a
 stack fashion.  The only way memory is released is by resetting one of the
 pointers.
 
-Hunk allocations should be given a name, so the Hunk_Print () function
+Hunk allocations should be given a name, so the Hunk_Print() function
 can display usage.
 
 Hunk allocations are guaranteed to be 16 byte aligned.
@@ -40,7 +40,7 @@ strings from command input.  There is only about 48K for it, allocated at
 the very bottom of the hunk.
 
 Cache_??? Cache memory is for objects that can be dynamically loaded and
-can usefully stay persistant between levels.  The size of the cache
+can usefully stay persistent between levels.  The size of the cache
 fluctuates from level to level.
 
 To allocate a cachable object
@@ -83,46 +83,49 @@ Zone block
 
 */
 
-void Memory_Init (void *buf, int size);
+void Memory_Init(void *buf, int size);
 
-void Z_Free (void *ptr);
-void *Z_Malloc (int size);			// returns 0 filled memory
-void *Z_TagMalloc (int size, int tag);
+void Z_Free(void *ptr);
 
-void Z_DumpHeap (void);
-void Z_CheckHeap (void);
-int Z_FreeMemory (void);
+// allocate to the zone, returns 0 filled memory
+void *Z_Malloc(int size);
 
-void *Hunk_Alloc (int size);		// returns 0 filled memory
-void *Hunk_AllocName (int size, char *name);
+// allocate to the zone, and specify a tag
+void *Z_TagMalloc(int size, int tag);
 
-void *Hunk_HighAllocName (int size, char *name);
+void Z_DumpHeap(void);
+void Z_CheckHeap(void);
+int Z_FreeMemory(void);
 
-int	Hunk_LowMark (void);
-void Hunk_FreeToLowMark (int mark);
+void *Hunk_Alloc(int size);  // returns 0 filled memory
+void *Hunk_AllocName(int size, char *name);
 
-int	Hunk_HighMark (void);
-void Hunk_FreeToHighMark (int mark);
+void *Hunk_HighAllocName(int size, char *name);
 
-void *Hunk_TempAlloc (int size);
+int	Hunk_LowMark(void);
+void Hunk_FreeToLowMark(int mark);
 
-void Hunk_Check (void);
+int	Hunk_HighMark(void);
+void Hunk_FreeToHighMark(int mark);
 
-typedef struct cache_user_s
-{
-	void	*data;
+void *Hunk_TempAlloc(int size);
+
+void Hunk_Check(void);
+
+typedef struct cache_user_s {
+	void *data;
 } cache_user_t;
 
-void Cache_Flush (void);
+void Cache_Flush(void);
 
-void *Cache_Check (cache_user_t *c);
 // returns the cached data, and moves to the head of the LRU list
 // if present, otherwise returns NULL
+void *Cache_Check(cache_user_t *c);
 
-void Cache_Free (cache_user_t *c);
+void Cache_Free(cache_user_t *c);
 
-void *Cache_Alloc (cache_user_t *c, int size, char *name);
 // Returns NULL if all purgable data was tossed and there still
 // wasn't enough room.
+void *Cache_Alloc(cache_user_t *c, int size, char *name);
 
-void Cache_Report (void);
+void Cache_Report(void);
