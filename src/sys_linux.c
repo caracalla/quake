@@ -63,7 +63,7 @@ void Sys_Printf(char *fmt, ...) {
 	l = strlen(text);
 	t_p = text;
 
-// make sure everything goes through, even though we are non-blocking
+	// make sure everything goes through, even though we are non-blocking
 	while (l) {
 		r = write(1, text, l);
 
@@ -93,12 +93,12 @@ void Sys_Printf(char *fmt, ...) {
 	va_end(argptr);
 
 	// TODO: if text is too long, wouldn't strlen(text) potentially access
-	//invalid data and cause a crash?
+	// invalid data and cause a crash?
 	if (strlen(text) > sizeof(text)) {
 		Sys_Error("memory overwrite in Sys_Printf");
 	}
 
-	//  TODO: what does this do?
+	// TODO: what does this do?
 	for (p = (unsigned char *)text; *p; p++) {
 		*p &= 0x7f;
 		if ((*p > 128 || *p < 32) && *p != 10 && *p != 13 && *p != 9) {
@@ -134,8 +134,6 @@ void Sys_Error(char *error, ...) {
 	vsprintf(string, error, argptr);
 	va_end(argptr);
 
-	// TODO: why do this and Sys_Warn not do the same bounds checking as
-	// Sys_Printf?
 	fprintf(stderr, "Error: %s\n", string);
 
 	Host_Shutdown();
@@ -149,6 +147,7 @@ void Sys_Warn(char *warning, ...) {
 	va_start(argptr, warning);
 	vsprintf(string, warning, argptr);
 	va_end(argptr);
+
 	fprintf(stderr, "Warning: %s", string);
 }
 

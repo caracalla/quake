@@ -101,6 +101,81 @@ Doubly linked list, LRU
 
 TODO: investigate further
 
+
+
+## Filesystem
+```
+// in memory
+typedef struct {
+	char name[MAX_QPATH];
+	int filepos;
+	int filelen;
+} packfile_t;
+
+typedef struct pack_s {
+	char filename[MAX_OSPATH];
+	int handle;
+	int numfiles;
+	packfile_t *files;
+} pack_t;
+
+// on disk
+typedef struct {
+	char name[56];
+	int filepos;
+	int filelen;
+} dpackfile_t;
+
+typedef struct {
+	char id[4];
+	int dirofs;
+	int dirlen;
+} dpackheader_t;
+
+typedef struct searchpath_s {
+	char    filename[MAX_OSPATH];
+	pack_t  *pack;  // only one of filename / pack will be used
+	struct searchpath_s *next;
+} searchpath_t;
+```
+
+pak file on disk begins with `dpackheader_t`, followed by `dpackfile_t`s at `header.dirofs`
+when read into memory, the pak is represented by `pack_t`, which has many `packfile_t`s
+
+* `COM_Path_f` - path command, prints all of `com_searchpaths`
+* `COM_WriteFile`
+* `COM_CreatePath` - how does this work?
+* `COM_CopyFile` - copies a file over the network?
+* `COM_FindFile` - searches for a file in `com_searchpaths`
+	* if the current item is a pakfile, it finds or creates the file within it
+	* otherwise, ???
+	* if file not found, all -1s returned
+* `COM_OpenFile` - calls `COM_FindFile` with fd
+	* `COM_LoadFile` - calls `COM_OpenFile`
+		* `COM_LoadHunkFile` - calls `COM_LoadFile` and puts it in the hunk
+		* `COM_LoadTempFile` - calls `COM_LoadFile` and puts it in the hunk as a temporary
+		* `COM_LoadCacheFile` - calls `COM_LoadFile` and puts it in the cache
+		* `COM_LoadStackFile` - calls `COM_LoadFile` and puts it in the zone (if small enough)
+* `COM_FOpenFile` - falls `COM_FindFile` with FILE
+* `COM_CloseFile`
+* `COM_LoadPackFile`
+	* opens the packfile
+	* reads its header, makes sure it starts with "PACK"
+	* allocates the `packfile_t`s on the hunk
+	* verifies the file integrity with CRC (?) (only matters for unregistered versions)
+	* allocates the `pack_t` on the hunk, pointing at the `packfile_t`s
+* `COM_AddGameDirectory`
+	* adds the directory to `com_searchpaths`
+	* calls `COM_LoadPackFile` for each pakfile in the directory
+* `COM_InitFilesystem`
+	* checks for `basedir` argv, loads that or the default
+	* does the same for `cachedir`, if none, sets none
+	* `COM_AddGameDirectory` basedir
+		* does the same for `hipnotic`, `rogue`, and `game` flags
+	* allows player to override `com_searchpaths` with `path` flag
+
+
+
 ## The Flow of Control
 
 ### `main`
@@ -150,7 +225,7 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 1. `Memory_Init` - inits the hunk, cache, and zone memory
 1. `Cbuf_Init` - allocates 8192 bytes for the command buffer
 1. `Cmd_Init` - adds commands like exec, echo, alias, cmd, wait
-1. `V_Init` - adds more commands, and registers a ton of cvars
+1. `V_Init` - adds commands and registers a ton of cvars related to player view
 1. `Chase_Init` - registers camera chase cvars
 1. `Host_InitVCR` - inits playback or record if desired
 1. `COM_Init` - checks for endianness, registers some cvars, adds path command, inits filesystem, and does registration check
