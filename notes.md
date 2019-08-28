@@ -1,13 +1,109 @@
 # Quake Notes
 
-## global variables and cvars
+## Global Variables and cvars
 
 * common
 	* `char* com_cmdline` (cvar) - all command line arguments that can fit within 255 characters, space delimited
 	* `int com_argc` - MAX_NUM_ARGVS or the total number of arguments, whichever is smaller
 	* `char** com_argv` - basically a copy of argv, with " " as the final element
 
-## `main`
+
+
+## Important Prefixes
+
+* COM - common
+* Q - also common?
+* Host - host methods
+* SV - server methods
+* Cbuf - command buffer
+* Cmd - command execution
+* Key - key binding and event handling
+* IN - mouse, or other input devices
+* Con - console
+* V - view (player eye positioning)
+* Chase - chase camera mode
+* W - wad
+* PR - edicts?
+* Mod - models
+* NET - network?
+* Con - console
+* M - menu
+* SCR - screen
+* Memory
+	* Z - zone management
+	* Hunk - hunk management
+	* Cache - cache management
+
+## Memory Management
+is this right?
+--- top ---
+video buffer
+z buffer
+surface cache
+<-- high hunk reset buffer held by video
+high hunk allocations
+<-- high hunk used
+cacheable memory
+<-- low hunk used
+client and server low hunk allocations
+<-- reset point held by host
+startup hunk allocations
+zone block (48k)
+--- bottom ---
+
+### Hunk
+```
+typedef struct {
+	int sentinel;
+	int size;  // including sizeof(hunk_t), -1 = not allocated
+	char name[8];
+} hunk_t;
+```
+
+hunk_base - pointer to the memory allocated to the hunk
+hunk_size - size in bytes of hunk_base
+hunk_low_used - amount of low hunk used in bytes
+hunk_high_used - amount of high hunk used in bytes
+
+Low and high allocatable spaces behave the same.
+
+Items can be temporarily allocated to the high hunk, but they will be deallocated as soon as anything tries to allocate to the high hunk
+
+### Zone
+```
+typedef struct memblock_s {
+	int size;  // including the header and possibly tiny fragments
+	int tag;  // a tag of 0 is a free block
+	int id;  // should be ZONEID
+	struct memblock_s *next;
+	struct memblock_s *prev;
+	int pad;  // pad to 64 bit boundary
+} memblock_t;
+```
+
+Doubly linked list of memblock_t nodes, living within the first allocated lower portion of the hunk.  The data is stored in the space in memory just after the memblock_t for that data.
+
+### Cache
+```
+typedef struct cache_system_s {
+	int size;  // including this header
+	cache_user_t *user;
+	char name[16];
+	struct cache_system_s *prev;
+	struct cache_system_s *next;
+	struct cache_system_s *lru_prev;  // for LRU flushing
+	struct cache_system_s *lru_next;  // for LRU flushing
+} cache_system_t;
+```
+
+Lives between the high and low hunk portions, can be freed from to provide additional space on either end
+Doubly linked list, LRU
+
+TODO: investigate further
+
+## The Flow of Control
+
+### `main`
 
 1. Initialization:
 	1. initializes quake params (parms) to 0
@@ -28,7 +124,7 @@
 	1. sets time
 	1. `Host_Frame` does everything
 
-## `COM_InitArgv`
+### `COM_InitArgv`
 
 1. for up to 50 (`MAX_NUM_ARGVS`) args, and up to a total of 255 characters (`CMDLINE_LENGTH`), all args are fed into `com_cmdline`, delimited by spaces
 1. all args are fed into `largv`
@@ -45,13 +141,13 @@
 1. `largv` is copied into `com_argv`
 1. `rogue` and `hipnotic` args are checked
 
-## `COM_CheckParm`
+### `COM_CheckParm`
 
 Returns the index in `com_argv` of the desired arg, returns 0 if not found
 
-## `Host_Init`
+### `Host_Init`
 
-1. `Memory_Init` - inits the cache and allocates the main memory zone
+1. `Memory_Init` - inits the hunk, cache, and zone memory
 1. `Cbuf_Init` - allocates 8192 bytes for the command buffer
 1. `Cmd_Init` - adds commands like exec, echo, alias, cmd, wait
 1. `V_Init` - adds more commands, and registers a ton of cvars
@@ -82,7 +178,7 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 1. sets the hunk low mark?
 1. sets `host_initialized` to true, marking the end of initialization, and preventing any further commands from being added
 
-### Commands Added in Host_Init
+#### Commands Added in Host_Init
 * command processing
 	* stuffcmds - `Cmd_StuffCmds_f`
 	* exec - `Cmd_Exec_f`
@@ -190,7 +286,7 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 	* playdemo - `CL_PlayDemo_f`
 	* timedemo - `CL_TimeDemo_f`
 
-## `_Host_Frame`
+### `_Host_Frame`
 
 1. update random
 1. check if enough time has passed to render a new frame
@@ -207,7 +303,7 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 
 
 
-# areas of interest:
+## areas of further interest:
 
 * hipnotic and rogue
 	* these are expansions

@@ -402,7 +402,7 @@ int main(int argc, char **argv) {
 			time = sys_ticrate.value;
 		}
 
-		if (time > sys_ticrate.value*2) {
+		if (time > sys_ticrate.value * 2) {
 			oldtime = newtime;
 		} else {
 			oldtime += time;

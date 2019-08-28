@@ -25,25 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // i.e. about 48k
 #define DYNAMIC_SIZE 0xc000
 
-#define ZONEID 0x1d4a11
-#define MINFRAGMENT	64
-
-typedef struct memblock_s {
-	int size;  // including the header and possibly tiny fragments
-	int tag;  // a tag of 0 is a free block
-	int id;  // should be ZONEID
-	struct memblock_s *next;
-	struct memblock_s *prev;
-	int pad;  // pad to 64 bit boundary
-} memblock_t;
-
-// only used for the main zone
-typedef struct {
-	int size;  // total bytes malloced, including header
-	memblock_t blocklist;  // start / end cap for linked list
-	memblock_t *rover; // the current top?
-} memzone_t;
-
 void Cache_FreeLow(int new_low_hunk);
 void Cache_FreeHigh(int new_high_hunk);
 
@@ -62,6 +43,25 @@ The zone calls are pretty much only used for small strings and structures,
 all big things are allocated on the hunk.
 ==============================================================================
 */
+
+#define ZONEID 0x1d4a11
+#define MINFRAGMENT	64
+
+typedef struct memblock_s {
+	int size;  // including the header and possibly tiny fragments
+	int tag;  // a tag of 0 is a free block
+	int id;  // should be ZONEID
+	struct memblock_s *next;
+	struct memblock_s *prev;
+	int pad;  // pad to 64 bit boundary
+} memblock_t;
+
+// only used for the main zone
+typedef struct {
+	int size;  // total bytes malloced, including header
+	memblock_t blocklist;  // start / end cap for linked list
+	memblock_t *rover;
+} memzone_t;
 
 memzone_t *mainzone;
 
@@ -184,12 +184,12 @@ void *Z_TagMalloc(int block_size, int tag) {
 		Sys_Error("Z_TagMalloc: tried to use a 0 tag");
 	}
 
-	// scan through the block list looking for the first free block
-	// of sufficient size
 	block_size += sizeof(memblock_t);  // account for size of block header
 	block_size += 4;  // space for memory trash tester
 	block_size = (block_size + 7) & ~7;  // align to 8-byte boundary
 
+	// scan through the block list looking for the first free block
+	// of sufficient size
 	base = rover = mainzone->rover;
 	start = base->prev;
 
@@ -343,19 +343,19 @@ Run consistency and sentinel trashing checks
 ==============
 */
 void Hunk_Check(void) {
-	hunk_t *h;
-	h = (hunk_t *)hunk_base;
+	hunk_t *hunk;
+	hunk = (hunk_t *)hunk_base;
 
-	while ((byte *)h != hunk_base + hunk_low_used) {
-		if (h->sentinel != HUNK_SENTINEL) {
+	while ((byte *)hunk != hunk_base + hunk_low_used) {
+		if (hunk->sentinel != HUNK_SENTINEL) {
 			Sys_Error("Hunk_Check: trashed sentinel");
 		}
 
-		if (h->size < 16 || h->size + (byte *)h - hunk_base > hunk_size) {
+		if (hunk->size < 16 || h->size + (byte *)hunk - hunk_base > hunk_size) {
 			Sys_Error("Hunk_Check: bad size");
 		}
 
-		h = (hunk_t *)((byte *)h + h->size);
+		hunk = (hunk_t *)((byte *)hunk + hunk->size);
 	}
 }
 
@@ -393,7 +393,7 @@ void Hunk_Print(qboolean all) {
 
 	while (1) {
 		// skip to the high hunk if done with low hunk
-		if ( h == endlow ) {
+		if (h == endlow) {
 			Con_Printf("-------------------------\n");
 			Con_Printf("          :%8i REMAINING\n", hunk_size - hunk_low_used - hunk_high_used);
 			Con_Printf("-------------------------\n");
@@ -401,7 +401,7 @@ void Hunk_Print(qboolean all) {
 		}
 
 		// if totally done, break
-		if ( h == endhigh ) {
+		if (h == endhigh) {
 			break;
 		}
 
@@ -414,7 +414,7 @@ void Hunk_Print(qboolean all) {
 			Sys_Error("Hunk_Check: bad size");
 		}
 
-		next = (hunk_t *)((byte *)h+h->size);
+		next = (hunk_t *)((byte *)h + h->size);
 		count++;
 		totalblocks++;
 		sum += h->size;
@@ -459,7 +459,8 @@ void *Hunk_AllocName(int size, char *name) {
 		Sys_Error("Hunk_Alloc: bad size: %i", size);
 	}
 
-	size = sizeof(hunk_t) + ((size+15) &~ 15);
+	size += sizeof(hunk_t);  // account for size of hunk header
+	size = (size + 15) &~ 15;  // align to 16-byte boundary
 
 	if ((hunk_size - hunk_low_used - hunk_high_used) < size) {
 		Sys_Error("Hunk_Alloc: failed on %i bytes",size);
@@ -476,7 +477,7 @@ void *Hunk_AllocName(int size, char *name) {
 	h->sentinel = HUNK_SENTINEL;
 	Q_strncpy(h->name, name, 8);
 
-	return (void *)(h+1);
+	return (void *)(h + 1);
 }
 
 /*
@@ -547,7 +548,8 @@ void *Hunk_HighAllocName(int size, char *name) {
 	Hunk_Check();
 #endif
 
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	size += sizeof(hunk_t);  // account for size of hunk header
+	size = (size + 15) &~ 15;  // align to 16-byte boundary
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
 		Con_Printf("Hunk_HighAlloc: failed on %i bytes\n",size);
@@ -564,7 +566,7 @@ void *Hunk_HighAllocName(int size, char *name) {
 	h->sentinel = HUNK_SENTINEL;
 	Q_strncpy(h->name, name, 8);
 
-	return (void *)(h+1);
+	return (void *)(h + 1);
 }
 
 
@@ -576,9 +578,9 @@ Return space from the top of the hunk
 =================
 */
 void *Hunk_TempAlloc(int size) {
-	void	*buf;
+	void *buf;
 
-	size = (size+15)&~15;
+	size = (size + 15) &~ 15;
 
 	// this is redundant, since Hunk_HighMark does it as well
 	// if (hunk_tempactive) {
@@ -588,7 +590,7 @@ void *Hunk_TempAlloc(int size) {
 
 	hunk_tempmark = Hunk_HighMark();
 
-	buf = Hunk_HighAllocName size, "temp");
+	buf = Hunk_HighAllocName(size, "temp");
 
 	hunk_tempactive = true;
 
@@ -607,8 +609,10 @@ typedef struct cache_system_s {
 	int size;  // including this header
 	cache_user_t *user;
 	char name[16];
-	struct cache_system_s *prev, *next;
-	struct cache_system_s *lru_prev, *lru_next;  // for LRU flushing
+	struct cache_system_s *prev;
+	struct cache_system_s *next;
+	struct cache_system_s *lru_prev;  // for LRU flushing
+	struct cache_system_s *lru_next;  // for LRU flushing
 } cache_system_t;
 
 cache_system_t *Cache_TryAlloc(int size, qboolean nobottom);
@@ -623,15 +627,16 @@ Cache_Move
 void Cache_Move(cache_system_t *c) {
 	cache_system_t *new;
 
-// we are clearing up space at the bottom, so only allocate it late
+	// we are clearing up space at the bottom, so only allocate it late
 	new = Cache_TryAlloc(c->size, true);
+
 	if (new) {
 		// Con_Printf("cache_move ok\n");
-		Q_memcpy(new+1, c+1, c->size - sizeof(cache_system_t));
+		Q_memcpy(new + 1, c + 1, c->size - sizeof(cache_system_t));
 		new->user = c->user;
 		Q_memcpy(new->name, c->name, sizeof(new->name));
 		Cache_Free(c->user);
-		new->user->data = (void *)(new+1);
+		new->user->data = (void *)(new + 1);
 	} else {
 		// Con_Printf("cache_move failed\n");
 		Cache_Free(c->user);  // tough luck...
@@ -650,11 +655,16 @@ void Cache_FreeLow(int new_low_hunk) {
 
 	while (1) {
 		c = cache_head.next;
-		if (c == &cache_head)
+
+		if (c == &cache_head) {
 			return;  // nothing in cache at all
-		if ((byte *)c >= hunk_base + new_low_hunk)
+		}
+
+		if ((byte *)c >= hunk_base + new_low_hunk) {
 			return;  // there is space to grow the hunk
-		Cache_Move( c );	// reclaim the space
+		}
+
+		Cache_Move(c);	// reclaim the space
 	}
 }
 
