@@ -351,7 +351,7 @@ void Hunk_Check(void) {
 			Sys_Error("Hunk_Check: trashed sentinel");
 		}
 
-		if (hunk->size < 16 || h->size + (byte *)hunk - hunk_base > hunk_size) {
+		if (hunk->size < 16 || hunk->size + (byte *)hunk - hunk_base > hunk_size) {
 			Sys_Error("Hunk_Check: bad size");
 		}
 

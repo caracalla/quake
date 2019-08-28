@@ -49,7 +49,7 @@ void SZ_Print(sizebuf_t *buf, char *data);  // strcats onto the sizebuf
 //============================================================================
 
 typedef struct link_s {
-	struct link_s *prev,
+	struct link_s *prev;
 	struct link_s *next;
 } link_t;
 

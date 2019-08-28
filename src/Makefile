@@ -1,4 +1,4 @@
-program_NAME := handmadequake
+program_NAME := quake
 program_C_SRCS := $(wildcard *.c)
 program_OBJS := ${program_C_SRCS:.c=.o}
 program_LIBRARIES := X11 Xext m

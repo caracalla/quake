@@ -1074,7 +1074,7 @@ COM_InitArgv
 */
 void COM_InitArgv(int argc, char **argv) {
 	qboolean safe;
-	int i, j, n;
+	int i;
 	int j;
 	// reconstitute the command line for the cmdline externally visible cvar
 	int n = 0;
