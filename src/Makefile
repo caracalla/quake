@@ -8,7 +8,7 @@ CFLAGS := -Wall -m32 -O2
 LDFLAGS += -m32
 LDFLAGS += $(foreach library,$(program_LIBRARIES),-l$(library))
 
-.PHONY: all clean distclean
+.PHONY: all clean distclean run
 
 all: $(program_NAME)
 
@@ -20,3 +20,6 @@ clean:
 	@- $(RM) $(program_OBJS)
 
 distclean: clean
+
+run: all
+	./$(program_NAME) -nosound -winsize 640 480 -mem 16
