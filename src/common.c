@@ -330,7 +330,7 @@ int Q_atoi(char *str) {
 	if (*str == '-') {
 		sign = -1;
 		str++;
-	} else
+	} else {
 		sign = 1;
 	}
 
@@ -391,7 +391,7 @@ float Q_atof(char *str) {
 	if (*str == '-') {
 		sign = -1;
 		str++;
-	} else
+	} else {
 		sign = 1;
 	}
 
@@ -597,7 +597,7 @@ void MSG_WriteFloat(sizebuf_t *sb, float float_value) {
 		int long_value;
 	} dat;
 
-	dat.float_value = f;
+	dat.float_value = float_value;
 	dat.long_value = LittleLong(dat.long_value);
 
 	SZ_Write(sb, &dat.long_value, 4);

@@ -290,7 +290,7 @@ Cmd_Exec_f
 ===============
 */
 void Cmd_Exec_f(void) {
-	cha 	*f;
+	char *f;
 	int mark;
 
 	if (Cmd_Argc() != 2) {

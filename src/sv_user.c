@@ -535,7 +535,7 @@ nextmsg:
 						ret = 1;
 					} else if (Q_strncasecmp(s, "notarget", 8) == 0) {
 						ret = 1;
-					} else if (Q_strncasecmp(s, "fly", 3) == 0)
+					} else if (Q_strncasecmp(s, "fly", 3) == 0) {
 						ret = 1;
 					} else if (Q_strncasecmp(s, "name", 4) == 0) {
 						ret = 1;

@@ -179,7 +179,7 @@ lookspring is non 0, or when
 ===============
 */
 void V_DriftPitch(void) {
-	float delta,;
+	float delta;
 	float move;
 
 	if (noclip_anglehack || !cl.onground || cls.demoplayback ) {

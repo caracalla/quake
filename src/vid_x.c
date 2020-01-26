@@ -211,6 +211,8 @@ PIXEL24 xlib_rgb24(int r, int g, int b) {
 	} else {
 		p |= (b & b_mask);
 	}
+
+	return p;
 }
 
 void st2_fixup(XImage *framebuf, int x, int y, int width, int height) {
@@ -253,7 +255,7 @@ void st2_fixup(XImage *framebuf, int x, int y, int width, int height) {
 }
 
 void st3_fixup(XImage *framebuf, int x, int y, int width, int height) {
-	int xi
+	int xi;
 	int yi;
 	unsigned char *src;
 	PIXEL24 *dest;
@@ -766,7 +768,7 @@ void VID_SetPalette(unsigned char *palette) {
 			memcpy(current_palette, palette, 768);
 		}
 
-		for (i = 0; i < 256s; i++) {
+		for (i = 0; i < 256; i++) {
 			colors[i].pixel = i;
 			colors[i].flags = DoRed | DoGreen | DoBlue;
 			colors[i].red = palette[i * 3] * 257;
@@ -1120,7 +1122,7 @@ void GetEvent(void) {
 								ButtonPressMask|
 								ButtonReleaseMask);
 			} else {
-				mouse_x = (float)(x_event.xmotion.x - sp_mouse_x);
+				mouse_x = (float)(x_event.xmotion.x - p_mouse_x);
 				mouse_y = (float)(x_event.xmotion.y - p_mouse_y);
 				p_mouse_x = x_event.xmotion.x;
 				p_mouse_y = x_event.xmotion.y;
