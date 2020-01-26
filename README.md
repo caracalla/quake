@@ -18,3 +18,7 @@ linux-libc-dev:i386 g++-multilib libx11-dev:i386 libxext-dev:i386
 * get an x machine running and get it working with quake data files
 * remove the i386 dependency
 * remove the x11 dependency -- maybe render in framebuffer??
+* port to SDL
+	* input
+	* sound
+	* graphics

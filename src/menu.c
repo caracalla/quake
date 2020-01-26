@@ -418,9 +418,9 @@ void M_SinglePlayer_Key (int key)
 					break;
 			key_dest = key_game;
 			if (sv.active)
-				Cbuf_AddText ("disconnect\n");
-			Cbuf_AddText ("maxplayers 1\n");
-			Cbuf_AddText ("map start\n");
+				Cbuf_Append ("disconnect\n");
+			Cbuf_Append ("maxplayers 1\n");
+			Cbuf_Append ("map start\n");
 			break;
 
 		case 1:
@@ -547,7 +547,7 @@ void M_Load_Key (int k)
 		SCR_BeginLoadingPlaque ();
 
 	// issue the load command
-		Cbuf_AddText (va ("load s%i\n", load_cursor) );
+		Cbuf_Append (va ("load s%i\n", load_cursor) );
 		return;
 
 	case K_UPARROW:
@@ -580,7 +580,7 @@ void M_Save_Key (int k)
 	case K_ENTER:
 		m_state = m_none;
 		key_dest = key_game;
-		Cbuf_AddText (va("save s%i\n", load_cursor));
+		Cbuf_Append (va("save s%i\n", load_cursor));
 		return;
 
 	case K_UPARROW:
@@ -795,11 +795,11 @@ forward:
 
 		// setup_cursor == 4 (OK)
 		if (Q_strcmp(cl_name.string, setup_myname) != 0)
-			Cbuf_AddText ( va ("name \"%s\"\n", setup_myname) );
+			Cbuf_Append ( va ("name \"%s\"\n", setup_myname) );
 		if (Q_strcmp(hostname.string, setup_hostname) != 0)
 			Cvar_Set("hostname", setup_hostname);
 		if (setup_top != setup_oldtop || setup_bottom != setup_oldbottom)
-			Cbuf_AddText( va ("color %i %i\n", setup_top, setup_bottom) );
+			Cbuf_Append( va ("color %i %i\n", setup_top, setup_bottom) );
 		m_entersound = true;
 		M_Menu_MultiPlayer_f ();
 		break;
@@ -1256,7 +1256,7 @@ void M_Options_Key (int k)
 			Con_ToggleConsole_f ();
 			break;
 		case 2:
-			Cbuf_AddText ("exec default.cfg\n");
+			Cbuf_Append ("exec default.cfg\n");
 			break;
 		case 12:
 			M_Menu_Video_f ();
@@ -1458,7 +1458,7 @@ void M_Keys_Key (int k)
 		else if (k != '`')
 		{
 			sprintf (cmd, "bind \"%s\" \"%s\"\n", Key_KeynumToString (k), bindnames[keys_cursor][0]);
-			Cbuf_InsertText (cmd);
+			Cbuf_Prepend (cmd);
 		}
 
 		bind_grab = false;
@@ -1962,9 +1962,9 @@ forward:
 		m_state = m_none;
 
 		if (SerialConfig)
-			Cbuf_AddText (va ("connect \"%s\"\n", serialConfig_phone));
+			Cbuf_Append (va ("connect \"%s\"\n", serialConfig_phone));
 		else
-			Cbuf_AddText ("connect\n");
+			Cbuf_Append ("connect\n");
 		break;
 
 	case K_BACKSPACE:
@@ -2315,7 +2315,7 @@ void M_LanConfig_Key (int key)
 			m_return_onerror = true;
 			key_dest = key_game;
 			m_state = m_none;
-			Cbuf_AddText ( va ("connect \"%s\"\n", lanConfig_joinname) );
+			Cbuf_Append ( va ("connect \"%s\"\n", lanConfig_joinname) );
 			break;
 		}
 
@@ -2813,17 +2813,17 @@ void M_GameOptions_Key (int key)
 		if (gameoptions_cursor == 0)
 		{
 			if (sv.active)
-				Cbuf_AddText ("disconnect\n");
-			Cbuf_AddText ("listen 0\n");	// so host_netport will be re-examined
-			Cbuf_AddText ( va ("maxplayers %u\n", maxplayers) );
+				Cbuf_Append ("disconnect\n");
+			Cbuf_Append ("listen 0\n");	// so host_netport will be re-examined
+			Cbuf_Append ( va ("maxplayers %u\n", maxplayers) );
 			SCR_BeginLoadingPlaque ();
 
 			if (hipnotic)
-				Cbuf_AddText ( va ("map %s\n", hipnoticlevels[hipnoticepisodes[startepisode].firstLevel + startlevel].name) );
+				Cbuf_Append ( va ("map %s\n", hipnoticlevels[hipnoticepisodes[startepisode].firstLevel + startlevel].name) );
 			else if (rogue)
-				Cbuf_AddText ( va ("map %s\n", roguelevels[rogueepisodes[startepisode].firstLevel + startlevel].name) );
+				Cbuf_Append ( va ("map %s\n", roguelevels[rogueepisodes[startepisode].firstLevel + startlevel].name) );
 			else
-				Cbuf_AddText ( va ("map %s\n", levels[episodes[startepisode].firstLevel + startlevel].name) );
+				Cbuf_Append ( va ("map %s\n", levels[episodes[startepisode].firstLevel + startlevel].name) );
 
 			return;
 		}
@@ -2987,7 +2987,7 @@ void M_ServerList_Key (int k)
 		slist_sorted = false;
 		key_dest = key_game;
 		m_state = m_none;
-		Cbuf_AddText ( va ("connect \"%s\"\n", hostcache[slist_cursor].cname) );
+		Cbuf_Append ( va ("connect \"%s\"\n", hostcache[slist_cursor].cname) );
 		break;
 
 	default:
@@ -3220,10 +3220,10 @@ void M_ConfigureNetSubsystem(void)
 {
 // enable/disable net systems to match desired config
 
-	Cbuf_AddText ("stopdemo\n");
+	Cbuf_Append ("stopdemo\n");
 	if (SerialConfig || DirectConfig)
 	{
-		Cbuf_AddText ("com1 enable\n");
+		Cbuf_Append ("com1 enable\n");
 	}
 
 	if (IPXConfig || TCPIPConfig)

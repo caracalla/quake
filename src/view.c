@@ -139,20 +139,19 @@ float V_CalcBob (void)
 //=============================================================================
 
 
-cvar_t	v_centermove = {"v_centermove", "0.15", false};
-cvar_t	v_centerspeed = {"v_centerspeed","500"};
+cvar_t v_centermove = {"v_centermove", "0.15", false};
+cvar_t v_centerspeed = {"v_centerspeed","500"};
 
 
-void V_StartPitchDrift (void)
-{
+void V_StartPitchDrift(void) {
 #if 1
-	if (cl.laststop == cl.time)
-	{
-		return;		// something else is keeping it from drifting
+	if (cl.laststop == cl.time) {
+		// something else is keeping it from drifting
+		return;
 	}
 #endif
-	if (cl.nodrift || !cl.pitchvel)
-	{
+
+	if (cl.nodrift || !cl.pitchvel) {
 		cl.pitchvel = v_centerspeed.value;
 		cl.nodrift = false;
 		cl.driftmove = 0;
@@ -179,28 +178,26 @@ Drifting is enabled when the center view key is hit, mlook is released and
 lookspring is non 0, or when
 ===============
 */
-void V_DriftPitch (void)
-{
-	float		delta, move;
+void V_DriftPitch(void) {
+	float delta,;
+	float move;
 
-	if (noclip_anglehack || !cl.onground || cls.demoplayback )
-	{
+	if (noclip_anglehack || !cl.onground || cls.demoplayback ) {
 		cl.driftmove = 0;
 		cl.pitchvel = 0;
 		return;
 	}
 
-// don't count small mouse motion
-	if (cl.nodrift)
-	{
-		if ( fabs(cl.cmd.forwardmove) < cl_forwardspeed.value)
+	// don't count small mouse motion
+	if (cl.nodrift) {
+		if (fabs(cl.cmd.forwardmove) < cl_forwardspeed.value) {
 			cl.driftmove = 0;
-		else
+		} else {
 			cl.driftmove += host_frametime;
+		}
 
-		if ( cl.driftmove > v_centermove.value)
-		{
-			V_StartPitchDrift ();
+		if (cl.driftmove > v_centermove.value) {
+			V_StartPitchDrift();
 		}
 		return;
 	}
@@ -384,8 +381,7 @@ void V_ParseDamage (void)
 V_cshift_f
 ==================
 */
-void V_cshift_f (void)
-{
+void V_cshift_f(void) {
 	cshift_empty.destcolor[0] = atoi(Cmd_Argv(1));
 	cshift_empty.destcolor[1] = atoi(Cmd_Argv(2));
 	cshift_empty.destcolor[2] = atoi(Cmd_Argv(3));
@@ -1068,44 +1064,43 @@ void V_RenderView (void)
 V_Init
 =============
 */
-void V_Init (void)
-{
-	Cmd_AddCommand ("v_cshift", V_cshift_f);
-	Cmd_AddCommand ("bf", V_BonusFlash_f);
-	Cmd_AddCommand ("centerview", V_StartPitchDrift);
+void V_Init(void) {
+	Cmd_AddCommand("v_cshift", V_cshift_f);
+	Cmd_AddCommand("bf", V_BonusFlash_f);
+	Cmd_AddCommand("centerview", V_StartPitchDrift);
 
-	Cvar_RegisterVariable (&lcd_x);
-	Cvar_RegisterVariable (&lcd_yaw);
+	Cvar_RegisterVariable(&lcd_x);
+	Cvar_RegisterVariable(&lcd_yaw);
 
-	Cvar_RegisterVariable (&v_centermove);
-	Cvar_RegisterVariable (&v_centerspeed);
+	Cvar_RegisterVariable(&v_centermove);
+	Cvar_RegisterVariable(&v_centerspeed);
 
-	Cvar_RegisterVariable (&v_iyaw_cycle);
-	Cvar_RegisterVariable (&v_iroll_cycle);
-	Cvar_RegisterVariable (&v_ipitch_cycle);
-	Cvar_RegisterVariable (&v_iyaw_level);
-	Cvar_RegisterVariable (&v_iroll_level);
-	Cvar_RegisterVariable (&v_ipitch_level);
+	Cvar_RegisterVariable(&v_iyaw_cycle);
+	Cvar_RegisterVariable(&v_iroll_cycle);
+	Cvar_RegisterVariable(&v_ipitch_cycle);
+	Cvar_RegisterVariable(&v_iyaw_level);
+	Cvar_RegisterVariable(&v_iroll_level);
+	Cvar_RegisterVariable(&v_ipitch_level);
 
-	Cvar_RegisterVariable (&v_idlescale);
-	Cvar_RegisterVariable (&crosshair);
-	Cvar_RegisterVariable (&cl_crossx);
-	Cvar_RegisterVariable (&cl_crossy);
-	Cvar_RegisterVariable (&gl_cshiftpercent);
+	Cvar_RegisterVariable(&v_idlescale);
+	Cvar_RegisterVariable(&crosshair);
+	Cvar_RegisterVariable(&cl_crossx);
+	Cvar_RegisterVariable(&cl_crossy);
+	Cvar_RegisterVariable(&gl_cshiftpercent);
 
-	Cvar_RegisterVariable (&scr_ofsx);
-	Cvar_RegisterVariable (&scr_ofsy);
-	Cvar_RegisterVariable (&scr_ofsz);
-	Cvar_RegisterVariable (&cl_rollspeed);
-	Cvar_RegisterVariable (&cl_rollangle);
-	Cvar_RegisterVariable (&cl_bob);
-	Cvar_RegisterVariable (&cl_bobcycle);
-	Cvar_RegisterVariable (&cl_bobup);
+	Cvar_RegisterVariable(&scr_ofsx);
+	Cvar_RegisterVariable(&scr_ofsy);
+	Cvar_RegisterVariable(&scr_ofsz);
+	Cvar_RegisterVariable(&cl_rollspeed);
+	Cvar_RegisterVariable(&cl_rollangle);
+	Cvar_RegisterVariable(&cl_bob);
+	Cvar_RegisterVariable(&cl_bobcycle);
+	Cvar_RegisterVariable(&cl_bobup);
 
-	Cvar_RegisterVariable (&v_kicktime);
-	Cvar_RegisterVariable (&v_kickroll);
-	Cvar_RegisterVariable (&v_kickpitch);
+	Cvar_RegisterVariable(&v_kicktime);
+	Cvar_RegisterVariable(&v_kickroll);
+	Cvar_RegisterVariable(&v_kickpitch);
 
-	BuildGammaTable (1.0);	// no gamma yet
-	Cvar_RegisterVariable (&v_gamma);
+	BuildGammaTable(1.0);	// no gamma yet
+	Cvar_RegisterVariable(&v_gamma);
 }

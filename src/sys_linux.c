@@ -338,7 +338,9 @@ void Sys_LowFPPrecision(void) {}
 #endif
 
 int main(int argc, char **argv) {
-	double time, oldtime, newtime;
+	double elapsed_time;
+	double oldtime;
+	double newtime;
 	quakeparms_t parms;
 	extern int vcrFile;
 	extern int recording;
@@ -389,29 +391,29 @@ int main(int argc, char **argv) {
 	while (1) {
 		// find time spent rendering last frame
 		newtime = Sys_FloatTime();
-		time = newtime - oldtime;
+		elapsed_time = newtime - oldtime;
 
 		if (cls.state == ca_dedicated) {
 			// play vcrfiles at max speed
-			if (time < sys_ticrate.value && (vcrFile == -1 || recording) ) {
+			if (elapsed_time < sys_ticrate.value && (vcrFile == -1 || recording) ) {
 				usleep(1);
 				continue; // not time to run a server only tic yet
 			}
 
-			time = sys_ticrate.value;
+			elapsed_time = sys_ticrate.value;
 		}
 
-		if (time > sys_ticrate.value * 2) {
+		if (elapsed_time > sys_ticrate.value * 2) {
 			oldtime = newtime;
 		} else {
-			oldtime += time;
+			oldtime += elapsed_time;
 		}
 
-		Host_Frame(time);
+		Host_Frame(elapsed_time);
 
 		// graphic debugging aids
 		if (sys_linerefresh.value) {
-			Sys_LineRefresh();
+			Sys_LineRefresh();  // noop
 		}
 	}
 }
@@ -431,6 +433,7 @@ void Sys_MakeCodeWriteable(unsigned long startaddr, unsigned long length) {
 
 	// fprintf(stderr, "writable code %lx(%lx)-%lx, length=%lx\n", startaddr, addr, startaddr + length, length);
 
+	// 7 - can be read, written, and executed?
 	r = mprotect((char*)addr, length + startaddr - addr + psize, 7);
 
 	if (r < 0) {

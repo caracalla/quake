@@ -997,7 +997,7 @@ void SV_SendReconnect (void)
 
 	if (cls.state != ca_dedicated)
 #ifdef QUAKE2
-		Cbuf_InsertText ("reconnect\n");
+		Cbuf_Prepend ("reconnect\n");
 #else
 		Cmd_ExecuteString ("reconnect\n", src_command);
 #endif

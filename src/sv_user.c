@@ -479,111 +479,116 @@ SV_ReadClientMessage
 Returns false if the client should be killed
 ===================
 */
-qboolean SV_ReadClientMessage (void)
-{
-	int		ret;
-	int		cmd;
-	char		*s;
+qboolean SV_ReadClientMessage(void) {
+	int ret;
+	int cmd;
+	char *s;
 
-	do
-	{
+	do {
 nextmsg:
-		ret = NET_GetMessage (host_client->netconnection);
-		if (ret == -1)
-		{
-			Sys_Printf ("SV_ReadClientMessage: NET_GetMessage failed\n");
+		ret = NET_GetMessage(host_client->netconnection);
+
+		if (ret == -1) {
+			Sys_Printf("SV_ReadClientMessage: NET_GetMessage failed\n");
 			return false;
 		}
-		if (!ret)
+
+		if (!ret) {
 			return true;
+		}
 
-		MSG_BeginReading ();
+		MSG_BeginReading();
 
-		while (1)
-		{
-			if (!host_client->active)
-				return false;	// a command caused an error
-
-			if (msg_badread)
-			{
-				Sys_Printf ("SV_ReadClientMessage: badread\n");
+		while (1) {
+			if (!host_client->active) {
+				// a command caused an error
 				return false;
 			}
 
-			cmd = MSG_ReadChar ();
-
-			switch (cmd)
-			{
-			case -1:
-				goto nextmsg;		// end of message
-
-			default:
-				Sys_Printf ("SV_ReadClientMessage: unknown command char\n");
+			if (msg_badread) {
+				Sys_Printf("SV_ReadClientMessage: badread\n");
 				return false;
+			}
 
-			case clc_nop:
-//				Sys_Printf ("clc_nop\n");
-				break;
+			cmd = MSG_ReadChar();
 
-			case clc_stringcmd:
-				s = MSG_ReadString ();
-				if (host_client->privileged)
-					ret = 2;
-				else
-					ret = 0;
-				if (Q_strncasecmp(s, "status", 6) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "god", 3) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "notarget", 8) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "fly", 3) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "name", 4) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "noclip", 6) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "say", 3) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "say_team", 8) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "tell", 4) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "color", 5) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "kill", 4) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "pause", 5) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "spawn", 5) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "begin", 5) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "prespawn", 8) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "kick", 4) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "ping", 4) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "give", 4) == 0)
-					ret = 1;
-				else if (Q_strncasecmp(s, "ban", 3) == 0)
-					ret = 1;
-				if (ret == 2)
-					Cbuf_InsertText (s);
-				else if (ret == 1)
-					Cmd_ExecuteString (s, src_client);
-				else
-					Con_DPrintf("%s tried to %s\n", host_client->name, s);
-				break;
+			switch (cmd) {
+				case -1:
+					goto nextmsg;		// end of message
 
-			case clc_disconnect:
-//				Sys_Printf ("SV_ReadClientMessage: client disconnected\n");
-				return false;
+				case clc_nop:
+					// Sys_Printf ("clc_nop\n");
+					break;
 
-			case clc_move:
-				SV_ReadClientMove (&host_client->cmd);
-				break;
+				case clc_stringcmd:
+					s = MSG_ReadString();
+
+					if (host_client->privileged) {
+						ret = 2;
+					} else {
+						ret = 0;
+					}
+
+					if (Q_strncasecmp(s, "status", 6) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "god", 3) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "notarget", 8) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "fly", 3) == 0)
+						ret = 1;
+					} else if (Q_strncasecmp(s, "name", 4) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "noclip", 6) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "say", 3) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "say_team", 8) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "tell", 4) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "color", 5) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "kill", 4) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "pause", 5) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "spawn", 5) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "begin", 5) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "prespawn", 8) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "kick", 4) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "ping", 4) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "give", 4) == 0) {
+						ret = 1;
+					} else if (Q_strncasecmp(s, "ban", 3) == 0) {
+						ret = 1;
+					}
+
+					if (ret == 2) {
+						Cbuf_Prepend(s);
+					} else if (ret == 1) {
+						Cmd_ExecuteString(s, src_client);
+					} else {
+						Con_DPrintf("%s tried to %s\n", host_client->name, s);
+					}
+					break;
+
+				case clc_disconnect:
+					// Sys_Printf ("SV_ReadClientMessage: client disconnected\n");
+					return false;
+
+				case clc_move:
+					SV_ReadClientMove(&host_client->cmd);
+					break;
+
+				default:
+					Sys_Printf("SV_ReadClientMessage: unknown command char\n");
+					return false;
 			}
 		}
 	} while (ret == 1);

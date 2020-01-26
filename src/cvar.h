@@ -25,7 +25,7 @@ cvar_t variables are used to hold scalar or string variables that can be changed
 or displayed at the console or prog code as well as accessed directly in C code.
 
 it is sufficient to initialize a cvar_t with just the first two fields, or
-you can add a ,true flag for variables that you want saved to the configuration
+you can add a true flag for variables that you want saved to the configuration
 file when the game is quit:
 
 cvar_t r_draworder = {"r_draworder", "1"};

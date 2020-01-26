@@ -217,10 +217,10 @@ static void MaxPlayers_f (void)
 	}
 
 	if ((n == 1) && listening)
-		Cbuf_AddText ("listen 0\n");
+		Cbuf_Append ("listen 0\n");
 
 	if ((n > 1) && (!listening))
-		Cbuf_AddText ("listen 1\n");
+		Cbuf_Append ("listen 1\n");
 
 	svs.maxclients = n;
 	if (n == 1)
@@ -253,8 +253,8 @@ static void NET_Port_f (void)
 	if (listening)
 	{
 		// force a change to the new port
-		Cbuf_AddText ("listen 0\n");
-		Cbuf_AddText ("listen 1\n");
+		Cbuf_Append ("listen 0\n");
+		Cbuf_Append ("listen 1\n");
 	}
 }
 

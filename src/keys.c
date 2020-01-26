@@ -162,8 +162,8 @@ void Key_Console (int key)
 
 	if (key == K_ENTER)
 	{
-		Cbuf_AddText (key_lines[edit_line]+1);	// skip the >
-		Cbuf_AddText ("\n");
+		Cbuf_Append (key_lines[edit_line]+1);	// skip the >
+		Cbuf_Append ("\n");
 		Con_Printf ("%s\n",key_lines[edit_line]);
 		edit_line = (edit_line + 1) & 31;
 		history_line = edit_line;
@@ -279,18 +279,18 @@ void Key_Console (int key)
 char chat_buffer[32];
 qboolean team_message = false;
 
-void Key_Message (int key)
-{
+void Key_Message(int key) {
 	static int chat_bufferlen = 0;
 
-	if (key == K_ENTER)
-	{
-		if (team_message)
-			Cbuf_AddText ("say_team \"");
-		else
-			Cbuf_AddText ("say \"");
-		Cbuf_AddText(chat_buffer);
-		Cbuf_AddText("\"\n");
+	if (key == K_ENTER) {
+		if (team_message) {
+			Cbuf_Append("say_team \"");
+		} else {
+			Cbuf_Append("say \"");
+		}
+
+		Cbuf_Append(chat_buffer);
+		Cbuf_Append("\"\n");
 
 		key_dest = key_game;
 		chat_bufferlen = 0;
@@ -298,29 +298,30 @@ void Key_Message (int key)
 		return;
 	}
 
-	if (key == K_ESCAPE)
-	{
+	if (key == K_ESCAPE) {
 		key_dest = key_game;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
 		return;
 	}
 
-	if (key < 32 || key > 127)
-		return;	// non printable
+	if (key < 32 || key > 127) {
+		// non printable
+		return;
+	}
 
-	if (key == K_BACKSPACE)
-	{
-		if (chat_bufferlen)
-		{
+	if (key == K_BACKSPACE) {
+		if (chat_bufferlen) {
 			chat_bufferlen--;
 			chat_buffer[chat_bufferlen] = 0;
 		}
+
 		return;
 	}
 
-	if (chat_bufferlen == 31)
+	if (chat_bufferlen == 31) {
 		return; // all full
+	}
 
 	chat_buffer[chat_bufferlen++] = key;
 	chat_buffer[chat_bufferlen] = 0;
@@ -596,147 +597,144 @@ Called by the system between frames for both key up and key down events
 Should NOT be called during an interrupt!
 ===================
 */
-void Key_Event (int key, qboolean down)
-{
-	char	*kb;
-	char	cmd[1024];
+void Key_Event(int key, qboolean down) {
+	char *kb;
+	char cmd[1024];
 
 	keydown[key] = down;
 
-	if (!down)
+	if (!down) {
 		key_repeats[key] = 0;
+	}
 
 	key_lastpress = key;
 	key_count++;
-	if (key_count <= 0)
-	{
-		return;		// just catching keys for Con_NotifyBox
+
+	if (key_count <= 0) {
+		// just catching keys for Con_NotifyBox
+		return;
 	}
 
-// update auto-repeat status
-	if (down)
-	{
+	// update auto-repeat status
+	if (down) {
 		key_repeats[key]++;
-		if (key != K_BACKSPACE && key != K_PAUSE && key_repeats[key] > 1)
-		{
+
+		if (key != K_BACKSPACE && key != K_PAUSE && key_repeats[key] > 1) {
 			return;	// ignore most autorepeats
 		}
 
-		if (key >= 200 && !keybindings[key])
-			Con_Printf ("%s is unbound, hit F4 to set.\n", Key_KeynumToString (key) );
+		if (key >= 200 && !keybindings[key]) {
+			Con_Printf("%s is unbound, hit F4 to set.\n", Key_KeynumToString(key));
+		}
 	}
 
-	if (key == K_SHIFT)
+	if (key == K_SHIFT) {
 		shift_down = down;
+	}
 
-//
-// handle escape specialy, so the user can never unbind it
-//
-	if (key == K_ESCAPE)
-	{
-		if (!down)
+
+	// handle escape specialy, so the user can never unbind it
+	if (key == K_ESCAPE) {
+		if (!down) {
 			return;
-		switch (key_dest)
-		{
-		case key_message:
-			Key_Message (key);
-			break;
-		case key_menu:
-			M_Keydown (key);
-			break;
-		case key_game:
-		case key_console:
-			M_ToggleMenu_f ();
-			break;
-		default:
-			Sys_Error ("Bad key_dest");
 		}
+
+		switch (key_dest) {
+			case key_message:
+				Key_Message(key);
+				break;
+
+			case key_menu:
+				M_Keydown(key);
+				break;
+
+			case key_game:
+			case key_console:
+				M_ToggleMenu_f();
+				break;
+
+			default:
+				Sys_Error("Bad key_dest");
+		}
+
 		return;
 	}
 
-//
-// key up events only generate commands if the game key binding is
-// a button command (leading + sign).  These will occur even in console mode,
-// to keep the character from continuing an action started before a console
-// switch.  Button commands include the kenum as a parameter, so multiple
-// downs can be matched with ups
-//
-	if (!down)
-	{
+	// key up events only generate commands if the game key binding is
+	// a button command (leading + sign).  These will occur even in console mode,
+	// to keep the character from continuing an action started before a console
+	// switch.  Button commands include the kenum as a parameter, so multiple
+	// downs can be matched with ups
+	if (!down) {
 		kb = keybindings[key];
-		if (kb && kb[0] == '+')
-		{
-			sprintf (cmd, "-%s %i\n", kb+1, key);
-			Cbuf_AddText (cmd);
+
+		if (kb && kb[0] == '+') {
+			sprintf(cmd, "-%s %i\n", kb+1, key);
+			Cbuf_Append(cmd);
 		}
-		if (keyshift[key] != key)
-		{
+
+		if (keyshift[key] != key) {
 			kb = keybindings[keyshift[key]];
-			if (kb && kb[0] == '+')
-			{
+
+			if (kb && kb[0] == '+') {
 				sprintf (cmd, "-%s %i\n", kb+1, key);
-				Cbuf_AddText (cmd);
+				Cbuf_Append (cmd);
 			}
 		}
+
 		return;
 	}
 
-//
-// during demo playback, most keys bring up the main menu
-//
-	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game)
-	{
+	// during demo playback, most keys bring up the main menu
+	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game) {
 		M_ToggleMenu_f ();
 		return;
 	}
 
-//
-// if not a consolekey, send to the interpreter no matter what mode is
-//
-	if ( (key_dest == key_menu && menubound[key])
-	|| (key_dest == key_console && !consolekeys[key])
-	|| (key_dest == key_game && ( !con_forcedup || !consolekeys[key] ) ) )
-	{
+	// if not a consolekey, send to the interpreter no matter what mode is
+	if ((key_dest == key_menu && menubound[key])
+			|| (key_dest == key_console && !consolekeys[key])
+			|| (key_dest == key_game && (!con_forcedup || !consolekeys[key]))) {
 		kb = keybindings[key];
-		if (kb)
-		{
-			if (kb[0] == '+')
-			{	// button commands add keynum as a parm
+
+		if (kb) {
+			if (kb[0] == '+') {
+				// button commands add keynum as a parm
 				sprintf (cmd, "%s %i\n", kb, key);
-				Cbuf_AddText (cmd);
-			}
-			else
-			{
-				Cbuf_AddText (kb);
-				Cbuf_AddText ("\n");
+				Cbuf_Append (cmd);
+			} else {
+				Cbuf_Append (kb);
+				Cbuf_Append ("\n");
 			}
 		}
 		return;
 	}
 
-	if (!down)
-		return;		// other systems only care about key down events
+	if (!down) {
+		// other systems only care about key down events
+		return;
+	}
 
-	if (shift_down)
-	{
+	if (shift_down) {
 		key = keyshift[key];
 	}
 
-	switch (key_dest)
-	{
-	case key_message:
-		Key_Message (key);
-		break;
-	case key_menu:
-		M_Keydown (key);
-		break;
+	switch (key_dest) {
+		case key_message:
+			Key_Message (key);
+			break;
 
-	case key_game:
-	case key_console:
-		Key_Console (key);
-		break;
-	default:
-		Sys_Error ("Bad key_dest");
+		case key_menu:
+			M_Keydown (key);
+			break;
+
+		case key_game:
+		case key_console:
+			Key_Console (key);
+			break;
+
+		default:
+			Sys_Error ("Bad key_dest");
 	}
 }
 

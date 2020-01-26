@@ -832,7 +832,7 @@ void PF_localcmd (void)
 	char	*str;
 
 	str = G_STRING(OFS_PARM0);
-	Cbuf_AddText (str);
+	Cbuf_Append (str);
 }
 
 /*
@@ -1648,9 +1648,9 @@ void PF_changelevel (void)
 	s2 = G_STRING(OFS_PARM1);
 
 	if ((int)pr_global_struct->serverflags & (SFL_NEW_UNIT | SFL_NEW_EPISODE))
-		Cbuf_AddText (va("changelevel %s %s\n",s1, s2));
+		Cbuf_Append (va("changelevel %s %s\n",s1, s2));
 	else
-		Cbuf_AddText (va("changelevel2 %s %s\n",s1, s2));
+		Cbuf_Append (va("changelevel2 %s %s\n",s1, s2));
 #else
 	char	*s;
 
@@ -1660,7 +1660,7 @@ void PF_changelevel (void)
 	svs.changelevel_issued = true;
 
 	s = G_STRING(OFS_PARM0);
-	Cbuf_AddText (va("changelevel %s\n",s));
+	Cbuf_Append (va("changelevel %s\n",s));
 #endif
 }
 

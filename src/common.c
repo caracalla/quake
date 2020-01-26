@@ -152,101 +152,107 @@ void InsertLinkAfter(link_t *link, link_t *after) {
 ============================================================================
 */
 
-void Q_memset (void *dest, int fill, int count)
-{
-	int             i;
+void Q_memset(void *dest, int fill, int count) {
+	int i;
 
-	if ( (((long)dest | count) & 3) == 0)
-	{
+	if ((((long)dest | count) & 3) == 0) {
 		count >>= 2;
-		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
-		for (i=0 ; i<count ; i++)
+		fill = fill | (fill << 8) | (fill << 16) | (fill << 24);
+
+		for (i = 0; i < count; i++) {
 			((int *)dest)[i] = fill;
-	}
-	else
-		for (i=0 ; i<count ; i++)
+		}
+	} else {
+		for (i = 0; i < count; i++) {
 			((byte *)dest)[i] = fill;
+		}
+	}
 }
 
-void Q_memcpy (void *dest, void *src, int count)
-{
-	int             i;
+void Q_memcpy(void *dest, void *src, int count) {
+	int i;
 
-	if (( ( (long)dest | (long)src | count) & 3) == 0 )
-	{
-		count>>=2;
-		for (i=0 ; i<count ; i++)
+	if ((((long)dest | (long)src | count) & 3) == 0 ) {
+		count >>= 2;
+
+		for (i = 0; i < count; i++) {
 			((int *)dest)[i] = ((int *)src)[i];
-	}
-	else
-		for (i=0 ; i<count ; i++)
+		}
+	} else {
+		for (i = 0; i < count; i++) {
 			((byte *)dest)[i] = ((byte *)src)[i];
+		}
+	}
 }
 
-int Q_memcmp (void *m1, void *m2, int count)
-{
-	while(count)
-	{
+int Q_memcmp(void *m1, void *m2, int count) {
+	while(count) {
 		count--;
-		if (((byte *)m1)[count] != ((byte *)m2)[count])
+
+		if (((byte *)m1)[count] != ((byte *)m2)[count]) {
 			return -1;
+		}
 	}
+
 	return 0;
 }
 
-void Q_strcpy (char *dest, char *src)
-{
-	while (*src)
-	{
+void Q_strcpy(char *dest, char *src) {
+	while (*src) {
 		*dest++ = *src++;
 	}
+
 	*dest++ = 0;
 }
 
-void Q_strncpy (char *dest, char *src, int count)
-{
-	while (*src && count--)
-	{
+void Q_strncpy(char *dest, char *src, int count) {
+	while (*src && count--) {
 		*dest++ = *src++;
 	}
-	if (count)
+
+	if (count) {
 		*dest++ = 0;
+	}
 }
 
-int Q_strlen (char *str)
-{
-	int             count;
-
+int Q_strlen(char *str) {
+	int count;
 	count = 0;
-	while (str[count])
+
+	while (str[count]) {
 		count++;
+	}
 
 	return count;
 }
 
-char *Q_strrchr(char *s, char c)
-{
-    int len = Q_strlen(s);
-    s += len;
-    while (len--)
-	if (*--s == c) return s;
-    return 0;
+char *Q_strrchr(char *s, char c) {
+	int len = Q_strlen(s);
+	s += len;
+
+	while (len--) {
+		if (*--s == c) {
+			return s;
+		}
+	}
+	return 0;
 }
 
-void Q_strcat (char *dest, char *src)
-{
+void Q_strcat(char *dest, char *src) {
 	dest += Q_strlen(dest);
-	Q_strcpy (dest, src);
+	Q_strcpy(dest, src);
 }
 
-int Q_strcmp (char *s1, char *s2)
-{
-	while (1)
-	{
-		if (*s1 != *s2)
-			return -1;              // strings not equal
-		if (!*s1)
-			return 0;               // strings are equal
+int Q_strcmp(char *s1, char *s2) {
+	while (1) {
+		if (*s1 != *s2) {
+			return -1;  // strings not equal
+		}
+
+		if (!*s1) {
+			return 0;  // strings are equal
+		}
+
 		s1++;
 		s2++;
 	}
@@ -254,16 +260,20 @@ int Q_strcmp (char *s1, char *s2)
 	return -1;
 }
 
-int Q_strncmp (char *s1, char *s2, int count)
-{
-	while (1)
-	{
-		if (!count--)
+int Q_strncmp(char *s1, char *s2, int count) {
+	while (1) {
+		if (!count--) {
 			return 0;
-		if (*s1 != *s2)
-			return -1;              // strings not equal
-		if (!*s1)
-			return 0;               // strings are equal
+		}
+
+		if (*s1 != *s2) {
+			return -1;  // strings not equal
+		}
+
+		if (!*s1) {
+			return 0;  // strings are equal
+		}
+
 		s1++;
 		s2++;
 	}
@@ -271,173 +281,182 @@ int Q_strncmp (char *s1, char *s2, int count)
 	return -1;
 }
 
-int Q_strncasecmp (char *s1, char *s2, int n)
-{
-	int             c1, c2;
+int Q_strncasecmp(char *s1, char *s2, int n) {
+	int c1;
+	int c2;
 
-	while (1)
-	{
+	while (1) {
 		c1 = *s1++;
 		c2 = *s2++;
 
-		if (!n--)
-			return 0;               // strings are equal until end point
-
-		if (c1 != c2)
-		{
-			if (c1 >= 'a' && c1 <= 'z')
-				c1 -= ('a' - 'A');
-			if (c2 >= 'a' && c2 <= 'z')
-				c2 -= ('a' - 'A');
-			if (c1 != c2)
-				return -1;              // strings not equal
+		if (!n--) {
+			return 0;  // strings are equal until end point
 		}
-		if (!c1)
-			return 0;               // strings are equal
-//              s1++;
-//              s2++;
+
+		if (c1 != c2) {
+			if (c1 >= 'a' && c1 <= 'z') {
+				c1 -= ('a' - 'A');
+			}
+
+			if (c2 >= 'a' && c2 <= 'z') {
+				c2 -= ('a' - 'A');
+			}
+
+			if (c1 != c2) {
+				return -1;  // strings not equal
+			}
+		}
+
+		if (!c1) {
+			return 0;  // strings are equal
+		}
+
+	// s1++;
+	// s2++;
 	}
 
 	return -1;
 }
 
-int Q_strcasecmp (char *s1, char *s2)
-{
-	return Q_strncasecmp (s1, s2, 99999);
+int Q_strcasecmp(char *s1, char *s2) {
+	return Q_strncasecmp(s1, s2, 99999);
 }
 
-int Q_atoi (char *str)
-{
-	int             val;
-	int             sign;
-	int             c;
+int Q_atoi(char *str) {
+	int val;
+	int sign;
+	int c;
 
-	if (*str == '-')
-	{
+	if (*str == '-') {
 		sign = -1;
 		str++;
-	}
-	else
+	} else
 		sign = 1;
+	}
 
 	val = 0;
 
-//
-// check for hex
-//
-	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
-	{
+	//
+	// check for hex
+	//
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
 		str += 2;
-		while (1)
-		{
+
+		while (1) {
 			c = *str++;
-			if (c >= '0' && c <= '9')
-				val = (val<<4) + c - '0';
-			else if (c >= 'a' && c <= 'f')
-				val = (val<<4) + c - 'a' + 10;
-			else if (c >= 'A' && c <= 'F')
-				val = (val<<4) + c - 'A' + 10;
-			else
-				return val*sign;
+
+			if (c >= '0' && c <= '9') {
+				val = (val << 4) + c - '0';
+			} else if (c >= 'a' && c <= 'f') {
+				val = (val << 4) + c - 'a' + 10;
+			} else if (c >= 'A' && c <= 'F') {
+				val = (val << 4) + c - 'A' + 10;
+			} else {
+				return val * sign;
+			}
 		}
 	}
 
-//
-// check for character
-//
-	if (str[0] == '\'')
-	{
+	//
+	// check for character
+	//
+	if (str[0] == '\'') {
 		return sign * str[1];
 	}
 
-//
-// assume decimal
-//
-	while (1)
-	{
+	//
+	// assume decimal
+	//
+	while (1) {
 		c = *str++;
-		if (c <'0' || c > '9')
+
+		if (c <'0' || c > '9') {
 			return val*sign;
-		val = val*10 + c - '0';
+		}
+
+		val = val * 10 + c - '0';
 	}
 
 	return 0;
 }
 
 
-float Q_atof (char *str)
-{
-	double			val;
-	int             sign;
-	int             c;
-	int             decimal, total;
+float Q_atof(char *str) {
+	double val;
+	int sign;
+	int c;
+	int decimal;
+	int total;
 
-	if (*str == '-')
-	{
+	if (*str == '-') {
 		sign = -1;
 		str++;
-	}
-	else
+	} else
 		sign = 1;
+	}
 
 	val = 0;
 
-//
-// check for hex
-//
-	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
-	{
+	//
+	// check for hex
+	//
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
 		str += 2;
-		while (1)
-		{
+
+		while (1) {
 			c = *str++;
-			if (c >= '0' && c <= '9')
-				val = (val*16) + c - '0';
-			else if (c >= 'a' && c <= 'f')
-				val = (val*16) + c - 'a' + 10;
-			else if (c >= 'A' && c <= 'F')
-				val = (val*16) + c - 'A' + 10;
-			else
+
+			if (c >= '0' && c <= '9') {
+				val = (val * 16) + c - '0';
+			} else if (c >= 'a' && c <= 'f') {
+				val = (val * 16) + c - 'a' + 10;
+			} else if (c >= 'A' && c <= 'F') {
+				val = (val * 16) + c - 'A' + 10;
+			} else {
 				return val*sign;
+			}
 		}
 	}
 
-//
-// check for character
-//
-	if (str[0] == '\'')
-	{
+	//
+	// check for character
+	//
+	if (str[0] == '\'') {
 		return sign * str[1];
 	}
 
-//
-// assume decimal
-//
+	//
+	// assume decimal
+	//
 	decimal = -1;
 	total = 0;
-	while (1)
-	{
+
+	while (1) {
 		c = *str++;
-		if (c == '.')
-		{
+
+		if (c == '.') {
 			decimal = total;
 			continue;
 		}
-		if (c <'0' || c > '9')
+
+		if (c <'0' || c > '9') {
 			break;
-		val = val*10 + c - '0';
+		}
+
+		val = val * 10 + c - '0';
 		total++;
 	}
 
-	if (decimal == -1)
+	if (decimal == -1) {
 		return val*sign;
-	while (total > decimal)
-	{
+	}
+
+	while (total > decimal) {
 		val /= 10;
 		total--;
 	}
 
-	return val*sign;
+	return val * sign;
 }
 
 /*
@@ -448,66 +467,63 @@ float Q_atof (char *str)
 ============================================================================
 */
 
-qboolean        bigendian;
+qboolean bigendian;
 
-short   (*BigShort) (short l);
-short   (*LittleShort) (short l);
-int     (*BigLong) (int l);
-int     (*LittleLong) (int l);
-float   (*BigFloat) (float l);
-float   (*LittleFloat) (float l);
+short (*BigShort)(short l);
+short (*LittleShort)(short l);
+int (*BigLong)(int l);
+int (*LittleLong)(int l);
+float (*BigFloat)(float l);
+float (*LittleFloat)(float l);
 
-short   ShortSwap (short l)
-{
-	byte    b1,b2;
+short ShortSwap(short l) {
+	byte b1;
+	byte b2;
 
-	b1 = l&255;
-	b2 = (l>>8)&255;
+	b1 = l & 255;
+	b2 = (l >> 8) & 255;
 
-	return (b1<<8) + b2;
+	return (b1 << 8) + b2;
 }
 
-short   ShortNoSwap (short l)
-{
+short ShortNoSwap(short l) {
 	return l;
 }
 
-int    LongSwap (int l)
-{
-	byte    b1,b2,b3,b4;
+int LongSwap(int l) {
+	byte b1;
+	byte b2;
+	byte b3;
+	byte b4;
 
-	b1 = l&255;
-	b2 = (l>>8)&255;
-	b3 = (l>>16)&255;
-	b4 = (l>>24)&255;
+	b1 = l & 255;
+	b2 = (l >> 8) & 255;
+	b3 = (l >> 16) & 255;
+	b4 = (l >> 24) & 255;
 
-	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
+	return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
 }
 
-int     LongNoSwap (int l)
-{
+int LongNoSwap(int l) {
 	return l;
 }
 
-float FloatSwap (float f)
-{
-	union
-	{
-		float   f;
-		byte    b[4];
+float FloatSwap(float float_value) {
+	union {
+		float float_value;
+		byte byte_values[4];
 	} dat1, dat2;
 
 
-	dat1.f = f;
-	dat2.b[0] = dat1.b[3];
-	dat2.b[1] = dat1.b[2];
-	dat2.b[2] = dat1.b[1];
-	dat2.b[3] = dat1.b[0];
-	return dat2.f;
+	dat1.float_value = float_value;
+	dat2.byte_values[0] = dat1.byte_values[3];
+	dat2.byte_values[1] = dat1.byte_values[2];
+	dat2.byte_values[2] = dat1.byte_values[1];
+	dat2.byte_values[3] = dat1.byte_values[0];
+	return dat2.float_value;
 }
 
-float FloatNoSwap (float f)
-{
+float FloatNoSwap(float f) {
 	return f;
 }
 
@@ -524,109 +540,101 @@ Handles byte ordering and avoids alignment errors
 // writing functions
 //
 
-void MSG_WriteChar (sizebuf_t *sb, int c)
-{
-	byte    *buf;
+void MSG_WriteChar(sizebuf_t *sb, int c) {
+	byte *buf;
 
 #ifdef PARANOID
-	if (c < -128 || c > 127)
+	if (c < -128 || c > 127) {
 		Sys_Error ("MSG_WriteChar: range error");
+	}
 #endif
 
-	buf = SZ_GetSpace (sb, 1);
+	buf = SZ_GetSpace(sb, 1);
 	buf[0] = c;
 }
 
-void MSG_WriteByte (sizebuf_t *sb, int c)
-{
-	byte    *buf;
+void MSG_WriteByte(sizebuf_t *sb, int c) {
+	byte *buf;
 
 #ifdef PARANOID
-	if (c < 0 || c > 255)
-		Sys_Error ("MSG_WriteByte: range error");
+	if (c < 0 || c > 255) {
+		Sys_Error("MSG_WriteByte: range error");
+	}
 #endif
 
-	buf = SZ_GetSpace (sb, 1);
+	buf = SZ_GetSpace(sb, 1);
 	buf[0] = c;
 }
 
-void MSG_WriteShort (sizebuf_t *sb, int c)
-{
-	byte    *buf;
+void MSG_WriteShort(sizebuf_t *sb, int c) {
+	byte *buf;
 
 #ifdef PARANOID
-	if (c < ((short)0x8000) || c > (short)0x7fff)
+	if (c < ((short)0x8000) || c > (short)0x7fff) {
 		Sys_Error ("MSG_WriteShort: range error");
+	}
 #endif
 
-	buf = SZ_GetSpace (sb, 2);
-	buf[0] = c&0xff;
-	buf[1] = c>>8;
+	buf = SZ_GetSpace(sb, 2);
+	buf[0] = c & 0xff;
+	buf[1] = c >> 8;
 }
 
-void MSG_WriteLong (sizebuf_t *sb, int c)
-{
-	byte    *buf;
+void MSG_WriteLong(sizebuf_t *sb, int c) {
+	byte *buf;
 
-	buf = SZ_GetSpace (sb, 4);
-	buf[0] = c&0xff;
-	buf[1] = (c>>8)&0xff;
-	buf[2] = (c>>16)&0xff;
-	buf[3] = c>>24;
+	buf = SZ_GetSpace(sb, 4);
+
+	buf[0] = c & 0xff;
+	buf[1] = (c >> 8) & 0xff;
+	buf[2] = (c >> 16) & 0xff;
+	buf[3] = c >> 24;
 }
 
-void MSG_WriteFloat (sizebuf_t *sb, float f)
-{
-	union
-	{
-		float   f;
-		int     l;
+void MSG_WriteFloat(sizebuf_t *sb, float float_value) {
+	union {
+		float float_value;
+		int long_value;
 	} dat;
 
+	dat.float_value = f;
+	dat.long_value = LittleLong(dat.long_value);
 
-	dat.f = f;
-	dat.l = LittleLong (dat.l);
-
-	SZ_Write (sb, &dat.l, 4);
+	SZ_Write(sb, &dat.long_value, 4);
 }
 
-void MSG_WriteString (sizebuf_t *sb, char *s)
-{
-	if (!s)
-		SZ_Write (sb, "", 1);
-	else
-		SZ_Write (sb, s, Q_strlen(s)+1);
+void MSG_WriteString(sizebuf_t *sb, char *string) {
+	if (!string) {
+		SZ_Write(sb, "", 1);
+	} else {
+		SZ_Write(sb, string, Q_strlen(string) + 1);
+	}
 }
 
-void MSG_WriteCoord (sizebuf_t *sb, float f)
-{
-	MSG_WriteShort (sb, (int)(f*8));
+void MSG_WriteCoord(sizebuf_t *sb, float float_value) {
+	MSG_WriteShort(sb, (int)(float_value * 8));
 }
 
-void MSG_WriteAngle (sizebuf_t *sb, float f)
-{
-	MSG_WriteByte (sb, ((int)f*256/360) & 255);
+void MSG_WriteAngle(sizebuf_t *sb, float float_value) {
+	MSG_WriteByte(sb, ((int)float_value * 256 / 360) & 255);
 }
 
 //
 // reading functions
 //
-int                     msg_readcount;
-qboolean        msg_badread;
+int msg_readcount;
+qboolean msg_badread;
 
-void MSG_BeginReading (void)
-{
+void MSG_BeginReading(void) {
 	msg_readcount = 0;
 	msg_badread = false;
 }
 
 // returns -1 and sets msg_badread if no more characters are available
-int MSG_ReadChar (void)
-{
-	int     c;
+int MSG_ReadChar(void) {
+	int c;
 
-	if (msg_readcount+1 > net_message.cursize)
-	{
+	if (msg_readcount + 1 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
@@ -637,12 +645,10 @@ int MSG_ReadChar (void)
 	return c;
 }
 
-int MSG_ReadByte (void)
-{
-	int     c;
+int MSG_ReadByte(void) {
+	int c;
 
-	if (msg_readcount+1 > net_message.cursize)
-	{
+	if (msg_readcount+1 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
@@ -653,136 +659,138 @@ int MSG_ReadByte (void)
 	return c;
 }
 
-int MSG_ReadShort (void)
-{
-	int     c;
+int MSG_ReadShort(void) {
+	int c;
 
-	if (msg_readcount+2 > net_message.cursize)
-	{
+	if (msg_readcount + 2 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (short)(net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount+1]<<8));
+	c = (short)(
+			net_message.data[msg_readcount] + (
+					net_message.data[msg_readcount + 1] << 8));
 
 	msg_readcount += 2;
 
 	return c;
 }
 
-int MSG_ReadLong (void)
-{
-	int     c;
+// why isn't this using LittleLong()?
+int MSG_ReadLong(void) {
+	int c;
 
-	if (msg_readcount+4 > net_message.cursize)
-	{
+	if (msg_readcount + 4 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
-	c = net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount+1]<<8)
-	+ (net_message.data[msg_readcount+2]<<16)
-	+ (net_message.data[msg_readcount+3]<<24);
+	c = net_message.data[msg_readcount] + (
+			net_message.data[msg_readcount + 1] << 8) + (
+					net_message.data[msg_readcount + 2] << 16) + (
+							net_message.data[msg_readcount + 3] << 24);
 
 	msg_readcount += 4;
 
 	return c;
 }
 
-float MSG_ReadFloat (void)
-{
-	union
-	{
-		byte    b[4];
-		float   f;
-		int     l;
+float MSG_ReadFloat(void) {
+	union {
+		byte byte_values[4];
+		float float_value;
+		int long_value;
 	} dat;
 
-	dat.b[0] =      net_message.data[msg_readcount];
-	dat.b[1] =      net_message.data[msg_readcount+1];
-	dat.b[2] =      net_message.data[msg_readcount+2];
-	dat.b[3] =      net_message.data[msg_readcount+3];
+	dat.byte_values[0] = net_message.data[msg_readcount];
+	dat.byte_values[1] = net_message.data[msg_readcount + 1];
+	dat.byte_values[2] = net_message.data[msg_readcount + 2];
+	dat.byte_values[3] = net_message.data[msg_readcount + 3];
 	msg_readcount += 4;
 
-	dat.l = LittleLong (dat.l);
+	dat.long_value = LittleLong(dat.long_value);
 
-	return dat.f;
+	return dat.float_value;
 }
 
-char *MSG_ReadString (void)
-{
-	static char     string[2048];
-	int             l,c;
+char *MSG_ReadString(void) {
+	static char string[2048];
+	int l;
+	int c;
 
 	l = 0;
-	do
-	{
-		c = MSG_ReadChar ();
-		if (c == -1 || c == 0)
+
+	do {
+		c = MSG_ReadChar();
+
+		if (c == -1 || c == 0) {
 			break;
+		}
+
 		string[l] = c;
 		l++;
-	} while (l < sizeof(string)-1);
+	} while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 
 	return string;
 }
 
-float MSG_ReadCoord (void)
-{
-	return MSG_ReadShort() * (1.0/8);
+float MSG_ReadCoord(void) {
+	return MSG_ReadShort() * (1.0 / 8);
 }
 
-float MSG_ReadAngle (void)
-{
-	return MSG_ReadChar() * (360.0/256);
+float MSG_ReadAngle(void) {
+	return MSG_ReadChar() * (360.0 / 256);
 }
 
 
 
-//===========================================================================
+/*
+============================================================================
 
-void SZ_Alloc (sizebuf_t *buf, int startsize)
-{
-	if (startsize < 256)
+					SIZEBUF HANDLING
+
+============================================================================
+*/
+
+void SZ_Alloc(sizebuf_t *buf, int startsize) {
+	if (startsize < 256) {
 		startsize = 256;
-	buf->data = Hunk_AllocName (startsize, "sizebuf");
+	}
+
+	buf->data = Hunk_AllocName(startsize, "sizebuf");
 	buf->maxsize = startsize;
 	buf->cursize = 0;
 }
 
-
-void SZ_Free (sizebuf_t *buf)
-{
-//      Z_Free (buf->data);
-//      buf->data = NULL;
-//      buf->maxsize = 0;
+// unused, duplicate of SZ_Clear
+void SZ_Free(sizebuf_t *buf) {
+	// Z_Free(buf->data);
+	// buf->data = NULL;
+	// buf->maxsize = 0;
 	buf->cursize = 0;
 }
 
-void SZ_Clear (sizebuf_t *buf)
-{
+void SZ_Clear(sizebuf_t *buf) {
 	buf->cursize = 0;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, int length)
-{
-	void    *data;
+void *SZ_GetSpace(sizebuf_t *buf, int length) {
+	void *data;
 
-	if (buf->cursize + length > buf->maxsize)
-	{
-		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set");
+	if (buf->cursize + length > buf->maxsize) {
+		if (!buf->allowoverflow) {
+			Sys_Error("SZ_GetSpace: overflow without allowoverflow set");
+		}
 
-		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
+		if (length > buf->maxsize) {
+			Sys_Error("SZ_GetSpace: %i is > full buffer size", length);
+		}
 
 		buf->overflowed = true;
-		Con_Printf ("SZ_GetSpace: overflow");
-		SZ_Clear (buf);
+		Con_Printf("SZ_GetSpace: overflow");
+		SZ_Clear(buf);
 	}
 
 	data = buf->data + buf->cursize;
@@ -791,22 +799,23 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, void *data, int length)
-{
-	Q_memcpy (SZ_GetSpace(buf,length),data,length);
+void SZ_Write(sizebuf_t *buf, void *data, int length) {
+	Q_memcpy(SZ_GetSpace(buf, length), data, length);
 }
 
-void SZ_Print (sizebuf_t *buf, char *data)
-{
-	int             len;
+void SZ_Print(sizebuf_t *buf, char *data) {
+	int len;
 
-	len = Q_strlen(data)+1;
+	len = Q_strlen(data) + 1;
 
-// byte * cast to keep VC++ happy
-	if (buf->data[buf->cursize-1])
-		Q_memcpy ((byte *)SZ_GetSpace(buf, len),data,len); // no trailing 0
-	else
-		Q_memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
+	// byte * cast to keep VC++ happy
+	if (buf->data[buf->cursize-1]) {
+		// no trailing 0
+		Q_memcpy((byte *)SZ_GetSpace(buf, len), data, len);
+	} else {
+		// write over trailing 0
+		Q_memcpy((byte *)SZ_GetSpace(buf, len - 1) - 1, data, len);
+	}
 }
 
 
@@ -815,33 +824,36 @@ void SZ_Print (sizebuf_t *buf, char *data)
 
 /*
 ============
-COM_SkipPath
+COM_SkipPath (unused)
 ============
 */
-char *COM_SkipPath (char *pathname)
-{
-	char    *last;
+char *COM_SkipPath(char *pathname) {
+	char *last;
 
 	last = pathname;
-	while (*pathname)
-	{
-		if (*pathname=='/')
+
+	while (*pathname) {
+		if (*pathname=='/') {
 			last = pathname+1;
+		}
+
 		pathname++;
 	}
+
 	return last;
 }
 
 /*
 ============
-COM_StripExtension
+COM_StripExtension (unused)
 ============
 */
-void COM_StripExtension (char *in, char *out)
-{
-	while (*in && *in != '.')
-		*out++ = *in++;
-	*out = 0;
+void COM_StripExtension(char *input, char *output) {
+	while (*input && *input != '.') {
+		*output++ = *input++;
+	}
+
+	*output = 0;
 }
 
 /*
@@ -849,18 +861,24 @@ void COM_StripExtension (char *in, char *out)
 COM_FileExtension
 ============
 */
-char *COM_FileExtension (char *in)
-{
+char *COM_FileExtension(char *input) {
 	static char exten[8];
-	int             i;
+	int i;
 
-	while (*in && *in != '.')
-		in++;
-	if (!*in)
+	while (*input && *input != '.') {
+		input++;
+	}
+
+	if (!*input) {
 		return "";
-	in++;
-	for (i=0 ; i<7 && *in ; i++,in++)
-		exten[i] = *in;
+	}
+
+	input++;
+
+	for (i = 0; i < 7 && *input; i++, input++) {
+		exten[i] = *input;
+	}
+
 	exten[i] = 0;
 	return exten;
 }
@@ -897,23 +915,23 @@ void COM_FileBase(char *in, char *out) {
 COM_DefaultExtension
 ==================
 */
-void COM_DefaultExtension (char *path, char *extension)
-{
-	char    *src;
-//
-// if path doesn't have a .EXT, append extension
-// (extension should include the .)
-//
+void COM_DefaultExtension(char *path, char *extension) {
+	char *src;
+
+	// if path doesn't have a .EXT, append extension
+	// (extension should include the .)
 	src = path + strlen(path) - 1;
 
-	while (*src != '/' && src != path)
-	{
-		if (*src == '.')
-			return;                 // it has an extension
+	while (*src != '/' && src != path) {
+		if (*src == '.') {
+			// it has an extension
+			return;
+		}
+
 		src--;
 	}
 
-	strcat (path, extension);
+	strcat(path, extension);
 }
 
 
@@ -924,70 +942,73 @@ COM_Parse
 Parse a token out of a string
 ==============
 */
-char *COM_Parse (char *data)
-{
-	int             c;
-	int             len;
+char *COM_Parse(char *data) {
+	int c;
+	int len;
 
 	len = 0;
 	com_token[0] = 0;
 
-	if (!data)
+	if (!data) {
 		return NULL;
+	}
 
-// skip whitespace
+	// skip whitespace
 skipwhite:
-	while ( (c = *data) <= ' ')
-	{
-		if (c == 0)
-			return NULL;                    // end of file;
+	while ( (c = *data) <= ' ') {
+		if (c == 0) {
+			// end of file;
+			return NULL;
+		}
+
 		data++;
 	}
 
-// skip // comments
-	if (c=='/' && data[1] == '/')
-	{
-		while (*data && *data != '\n')
+	// skip "//" comments
+	if (c=='/' && data[1] == '/') {
+		while (*data && *data != '\n') {
 			data++;
+		}
+
 		goto skipwhite;
 	}
 
 
-// handle quoted strings specially
-	if (c == '\"')
-	{
+	// handle quoted strings specially
+	if (c == '\"') {
 		data++;
-		while (1)
-		{
+
+		while (1) {
 			c = *data++;
-			if (c=='\"' || !c)
-			{
+
+			if (c=='\"' || !c) {
 				com_token[len] = 0;
 				return data;
 			}
+
 			com_token[len] = c;
 			len++;
 		}
 	}
 
-// parse single characters
-	if (c=='{' || c=='}'|| c==')'|| c=='(' || c=='\'' || c==':')
-	{
+	// parse single characters
+	if (c == '{' || c == '}'|| c == ')'|| c == '(' || c == '\'' || c == ':') {
 		com_token[len] = c;
 		len++;
 		com_token[len] = 0;
-		return data+1;
+		return data + 1;
 	}
 
-// parse a regular word
-	do
-	{
+	// parse a regular word
+	do {
 		com_token[len] = c;
 		data++;
 		len++;
 		c = *data;
-	if (c=='{' || c=='}'|| c==')'|| c=='(' || c=='\'' || c==':')
+
+		if (c == '{' || c == '}'|| c == ')'|| c == '(' || c == '\'' || c == ':') {
 			break;
+		}
 	} while (c>32);
 
 	com_token[len] = 0;
@@ -1008,7 +1029,8 @@ int COM_CheckParm(char *parm) {
 
 	for (i = 1; i < com_argc; i++) {
 		if (!com_argv[i]) {
-			continue;  // NEXTSTEP sometimes clears appkit vars.
+			// NEXTSTEP sometimes clears appkit vars.
+			continue;
 		}
 
 		if (!Q_strcmp(parm, com_argv[i])) {
@@ -1249,8 +1271,8 @@ char com_cachedir[MAX_OSPATH];
 char com_gamedir[MAX_OSPATH];
 
 typedef struct searchpath_s {
-	char    filename[MAX_OSPATH];
-	pack_t  *pack;  // only one of filename / pack will be used
+	char filename[MAX_OSPATH];
+	pack_t *pack;  // only one of filename / pack will be used
 	struct searchpath_s *next;
 } searchpath_t;
 
