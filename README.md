@@ -14,8 +14,13 @@ this is a subset of id's release of quake with only the files required for the x
 some libraries I had to install to compile it on debian amd64:
 linux-libc-dev:i386 g++-multilib libx11-dev:i386 libxext-dev:i386
 
+## Execution
+```sh
+cd src
+make run
+```
+
 ## TODO
-* get an x machine running and get it working with quake data files
 * remove the i386 dependency
 * remove the x11 dependency -- maybe render in framebuffer??
 * port to SDL

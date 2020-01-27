@@ -36,35 +36,35 @@ void S_StopAllSoundsC(void);
 // Internal sound data & structures
 // =======================================================================
 
-channel_t   channels[MAX_CHANNELS];
-int			total_channels;
+channel_t channels[MAX_CHANNELS];
+int total_channels;
 
-int				snd_blocked = 0;
-static qboolean	snd_ambient = 1;
-qboolean		snd_initialized = false;
+int snd_blocked = 0;
+static qboolean snd_ambient = 1;
+qboolean snd_initialized = false;
 
 // pointer should go away
 volatile dma_t  *shm = 0;
 volatile dma_t sn;
 
-vec3_t		listener_origin;
-vec3_t		listener_forward;
-vec3_t		listener_right;
-vec3_t		listener_up;
-vec_t		sound_nominal_clip_dist=1000.0;
+vec3_t listener_origin;
+vec3_t listener_forward;
+vec3_t listener_right;
+vec3_t listener_up;
+vec_t sound_nominal_clip_dist=1000.0;
 
-int			soundtime;		// sample PAIRS
-int   		paintedtime; 	// sample PAIRS
+int soundtime;  // sample PAIRS
+int paintedtime;  // sample PAIRS
 
 
-#define	MAX_SFX		512
-sfx_t		*known_sfx;		// hunk allocated [MAX_SFX]
-int			num_sfx;
+#define MAX_SFX 512
+sfx_t *known_sfx;  // hunk allocated [MAX_SFX]
+int num_sfx;
 
-sfx_t		*ambient_sfx[NUM_AMBIENTS];
+sfx_t *ambient_sfx[NUM_AMBIENTS];
 
-int 		desired_speed = 11025;
-int 		desired_bits = 16;
+int desired_speed = 11025;
+int desired_bits = 16;
 
 int sound_started=0;
 
@@ -87,43 +87,37 @@ cvar_t _snd_mixahead = {"_snd_mixahead", "0.1", true};
 // ====================================================================
 
 
-//
 // Fake dma is a synchronous faking of the DMA progress used for
 // isolating performance in the renderer.  The fakedma_updates is
 // number of times S_Update() is called per second.
-//
 
 qboolean fakedma = false;
 int fakedma_updates = 15;
 
 
-void S_AmbientOff (void)
-{
+void S_AmbientOff(void) {
 	snd_ambient = false;
 }
 
 
-void S_AmbientOn (void)
-{
+void S_AmbientOn(void) {
 	snd_ambient = true;
 }
 
 
-void S_SoundInfo_f(void)
-{
-	if (!sound_started || !shm)
-	{
-		Con_Printf ("sound system not started\n");
+void S_SoundInfo_f(void) {
+	if (!sound_started || !shm) {
+		Con_Printf("sound system not started\n");
 		return;
 	}
 
-    Con_Printf("%5d stereo\n", shm->channels - 1);
-    Con_Printf("%5d samples\n", shm->samples);
-    Con_Printf("%5d samplepos\n", shm->samplepos);
-    Con_Printf("%5d samplebits\n", shm->samplebits);
-    Con_Printf("%5d submission_chunk\n", shm->submission_chunk);
-    Con_Printf("%5d speed\n", shm->speed);
-    Con_Printf("0x%x dma buffer\n", shm->buffer);
+	Con_Printf("%5d stereo\n", shm->channels - 1);
+	Con_Printf("%5d samples\n", shm->samples);
+	Con_Printf("%5d samplepos\n", shm->samplepos);
+	Con_Printf("%5d samplebits\n", shm->samplebits);
+	Con_Printf("%5d submission_chunk\n", shm->submission_chunk);
+	Con_Printf("%5d speed\n", shm->speed);
+	Con_Printf("0x%x dma buffer\n", shm->buffer);
 	Con_Printf("%5d total_channels\n", total_channels);
 }
 
@@ -134,22 +128,18 @@ S_Startup
 ================
 */
 
-void S_Startup (void)
-{
-	int		rc;
+void S_Startup(void) {
+	int rc;
 
-	if (!snd_initialized)
+	if (!snd_initialized) {
 		return;
+	}
 
-	if (!fakedma)
-	{
+	if (!fakedma) {
 		rc = SNDDMA_Init();
 
-		if (!rc)
-		{
-#ifndef	_WIN32
+		if (!rc) {
 			Con_Printf("S_Startup: SNDDMA_Init failed.\n");
-#endif
 			sound_started = 0;
 			return;
 		}
@@ -164,16 +154,16 @@ void S_Startup (void)
 S_Init
 ================
 */
-void S_Init (void)
-{
-
+void S_Init(void) {
 	Con_Printf("\nSound Initialization\n");
 
-	if (COM_CheckParm("-nosound"))
+	if (COM_CheckParm("-nosound")) {
 		return;
+	}
 
-	if (COM_CheckParm("-simsound"))
+	if (COM_CheckParm("-simsound")) {
 		fakedma = true;
+	}
 
 	Cmd_AddCommand("play", S_Play);
 	Cmd_AddCommand("playvol", S_PlayVol);
@@ -193,28 +183,22 @@ void S_Init (void)
 	Cvar_RegisterVariable(&snd_show);
 	Cvar_RegisterVariable(&_snd_mixahead);
 
-	if (host_parms.memsize < 0x800000)
-	{
-		Cvar_Set ("loadas8bit", "1");
-		Con_Printf ("loading all sounds as 8bit\n");
+	if (host_parms.memsize < 0x800000) {
+		Cvar_Set("loadas8bit", "1");
+		Con_Printf("loading all sounds as 8bit\n");
 	}
-
-
 
 	snd_initialized = true;
 
-	S_Startup ();
+	S_Startup();
+	SND_InitScaletable();
 
-	SND_InitScaletable ();
-
-	known_sfx = Hunk_AllocName (MAX_SFX*sizeof(sfx_t), "sfx_t");
+	known_sfx = Hunk_AllocName(MAX_SFX * sizeof(sfx_t), "sfx_t");
 	num_sfx = 0;
 
-// create a piece of DMA memory
-
-	if (fakedma)
-	{
-		shm = (void *) Hunk_AllocName(sizeof(*shm), "shm");
+	// create a piece of DMA memory
+	if (fakedma) {
+		shm = (void *)Hunk_AllocName(sizeof(*shm), "shm");
 		shm->splitbuffer = 0;
 		shm->samplebits = 16;
 		shm->speed = 22050;
@@ -224,20 +208,22 @@ void S_Init (void)
 		shm->soundalive = true;
 		shm->gamealive = true;
 		shm->submission_chunk = 1;
-		shm->buffer = Hunk_AllocName(1<<16, "shmbuf");
+		shm->buffer = Hunk_AllocName(1 << 16, "shmbuf");
 	}
 
-	Con_Printf ("Sound sampling rate: %i\n", shm->speed);
+	Con_Printf("Sound sampling rate: %i\n", shm->speed);
 
 	// provides a tick sound until washed clean
 
-//	if (shm->buffer)
-//		shm->buffer[4] = shm->buffer[5] = 0x7f;	// force a pop for debugging
+	// if (shm->buffer) {
+	// 	// force a pop for debugging
+	// 	shm->buffer[4] = shm->buffer[5] = 0x7f;
+	// }
 
-	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
+	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound("ambience/wind2.wav");
 
-	S_StopAllSounds (true);
+	S_StopAllSounds(true);
 }
 
 
