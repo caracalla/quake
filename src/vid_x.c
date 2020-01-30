@@ -1091,7 +1091,7 @@ void VID_Update(vrect_t *rects) {
 		vid.width = config_notify_width & ~7;
 		vid.height = config_notify_height;
 
-		ResetSharedFrameBuffers();
+		ResetFrameBuffer();
 
 		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
 		vid.buffer = x_framebuffer[current_framebuffer]->data;
