@@ -38,7 +38,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
-#include <X11/extensions/XShm.h>
 
 #include "quakedef.h"
 #include "d_local.h"
@@ -74,7 +73,6 @@ int d_con_indirect = 0;
 
 int vid_buffersize;
 
-static qboolean doShm;
 static Display *x_disp;
 static Colormap x_cmap;
 static Window x_win;
@@ -84,16 +82,11 @@ static XVisualInfo *x_visinfo;
 //static XImage *x_image;
 
 static int x_shmeventtype;
-//static XShmSegmentInfo x_shminfo;
 
 static qboolean oktodraw = false;
 
-int XShmQueryExtension(Display *);
-int XShmGetEventBase(Display *);
-
 int current_framebuffer;
 static XImage *x_framebuffer[2] = {0, 0};
-static XShmSegmentInfo x_shminfo[2];
 
 static int verbose = 0;
 
@@ -397,90 +390,6 @@ void ResetFrameBuffer(void) {
 	vid.conbuffer = vid.buffer;
 }
 
-void ResetSharedFrameBuffers(void) {
-	int size;
-	int key;
-	int minsize = getpagesize();
-	int frm;
-
-	if (d_pzbuffer) {
-		D_FlushCaches();
-		Hunk_FreeToHighMark(X11_highhunkmark);
-		d_pzbuffer = NULL;
-	}
-
-	X11_highhunkmark = Hunk_HighMark();
-
-	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof (*d_pzbuffer);
-
-	vid_surfcachesize = D_SurfaceCacheForRes(vid.width, vid.height);
-
-	X11_buffersize += vid_surfcachesize;
-
-	d_pzbuffer = Hunk_HighAllocName(X11_buffersize, "video");
-	if (d_pzbuffer == NULL) {
-		Sys_Error ("Not enough memory for video mode\n");
-	}
-
-	vid_surfcache =
-			(byte *) d_pzbuffer + vid.width * vid.height * sizeof (*d_pzbuffer);
-
-	D_InitCaches(vid_surfcache, vid_surfcachesize);
-
-	for (frm = 0; frm < 2; frm++) {
-		// free up old frame buffer memory
-		if (x_framebuffer[frm]) {
-			XShmDetach(x_disp, &x_shminfo[frm]);
-			free(x_framebuffer[frm]);
-			shmdt(x_shminfo[frm].shmaddr);
-		}
-
-		// create the image
-		x_framebuffer[frm] = XShmCreateImage(
-				x_disp,
-				x_vis,
-				x_visinfo->depth,
-				ZPixmap,
-				0,
-				&x_shminfo[frm],
-				vid.width,
-				vid.height);
-
-		// grab shared memory
-		size = x_framebuffer[frm]->bytes_per_line * x_framebuffer[frm]->height;
-
-		if (size < minsize) {
-			Sys_Error("VID: Window must use at least %d bytes\n", minsize);
-		}
-
-		key = random();
-		x_shminfo[frm].shmid = shmget((key_t)key, size, IPC_CREAT | 0777);
-
-		if (x_shminfo[frm].shmid == -1) {
-			Sys_Error("VID: Could not get any shared memory\n");
-		}
-
-		// attach to the shared memory segment
-		x_shminfo[frm].shmaddr = (void *)shmat(x_shminfo[frm].shmid, 0, 0);
-
-		printf(
-				"VID: shared memory id=%d, addr=0x%lx\n",
-				x_shminfo[frm].shmid,
-				(long)x_shminfo[frm].shmaddr);
-
-		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
-
-		// get the X server to attach to it
-		if (!XShmAttach(x_disp, &x_shminfo[frm])) {
-			Sys_Error("VID: XShmAttach() failed\n");
-		}
-
-		XSync(x_disp, 0);
-		shmctl(x_shminfo[frm].shmid, IPC_RMID, 0);
-	}
-}
-
 // Called at startup to set up translation tables, takes 256 8 bit RGB values
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
@@ -698,35 +607,7 @@ void VID_Init(unsigned char *palette) {
 	}
 	// now safe to draw
 
-	// even if MITSHM is available, make sure it's a local connection
-	if (XShmQueryExtension(x_disp)) {
-		char *displayname;
-		doShm = true;
-		displayname = (char *)getenv("DISPLAY");
-
-		if (displayname) {
-			char *d = displayname;
-
-			while (*d && (*d != ':')) {
-				d++;
-			}
-
-			if (*d) {
-				*d = 0;
-			}
-
-			if (!(!strcasecmp(displayname, "unix") || !*displayname)) {
-				doShm = false;
-			}
-		}
-	}
-
-	if (doShm) {
-		x_shmeventtype = XShmGetEventBase(x_disp) + ShmCompletion;
-		ResetSharedFrameBuffers();
-	} else {
-		ResetFrameBuffer();
-	}
+	ResetFrameBuffer();
 
 	current_framebuffer = 0;
 	vid.rowbytes = x_framebuffer[0]->bytes_per_line;
@@ -1066,6 +947,7 @@ void GetEvent(void) {
 	int b;
 
 	XNextEvent(x_disp, &x_event);
+
 	switch(x_event.type) {
 		case KeyPress:
 			keyq[keyq_head].key = XLateKey(&x_event.xkey);
@@ -1172,9 +1054,7 @@ void GetEvent(void) {
 			break;
 
 		default:
-			if (doShm && x_event.type == x_shmeventtype) {
-				oktodraw = true;
-			}
+			break;
 	}
 
 	if (old_windowed_mouse != _windowed_mouse.value) {
@@ -1211,11 +1091,7 @@ void VID_Update(vrect_t *rects) {
 		vid.width = config_notify_width & ~7;
 		vid.height = config_notify_height;
 
-		if (doShm) {
-			ResetSharedFrameBuffers();
-		} else {
-			ResetFrameBuffer();
-		}
+		ResetSharedFrameBuffers();
 
 		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
 		vid.buffer = x_framebuffer[current_framebuffer]->data;
@@ -1235,88 +1111,38 @@ void VID_Update(vrect_t *rects) {
 		scr_fullupdate = 0;
 	}
 
-
-	if (doShm) {
-		while (rects) {
-			if (x_visinfo->depth == 16) {
-				st2_fixup(
-						x_framebuffer[current_framebuffer],
-						rects->x,
-						rects->y,
-						rects->width,
-						rects->height);
-			} else if (x_visinfo->depth == 24) {
-				st3_fixup(
-						x_framebuffer[current_framebuffer],
-						rects->x,
-						rects->y,
-						rects->width,
-						rects->height);
-			}
-
-			if (!XShmPutImage(
-					x_disp,
-					x_win,
-					x_gc,
+	while (rects) {
+		if (x_visinfo->depth == 16) {
+			st2_fixup(
 					x_framebuffer[current_framebuffer],
-					rects->x,
-					rects->y,
-					rects->x,
-					rects->y,
-					rects->width,
-					rects->height,
-					True)) {
-				Sys_Error("VID_Update: XShmPutImage failed\n");
-			}
-
-			oktodraw = false;
-
-			while (!oktodraw) {
-				GetEvent();
-			}
-
-			rects = rects->pnext;
-		}
-
-		current_framebuffer = !current_framebuffer;
-		vid.buffer = x_framebuffer[current_framebuffer]->data;
-		vid.conbuffer = vid.buffer;
-		XSync(x_disp, False);
-	} else {
-		while (rects) {
-			if (x_visinfo->depth == 16) {
-				st2_fixup(
-						x_framebuffer[current_framebuffer],
-						rects->x,
-						rects->y,
-						rects->width,
-						rects->height);
-			} else if (x_visinfo->depth == 24) {
-				st3_fixup(
-						x_framebuffer[current_framebuffer],
-						rects->x,
-						rects->y,
-						rects->width,
-						rects->height);
-			}
-
-			XPutImage(
-					x_disp,
-					x_win,
-					x_gc,
-					x_framebuffer[0],
-					rects->x,
-					rects->y,
 					rects->x,
 					rects->y,
 					rects->width,
 					rects->height);
-			rects = rects->pnext;
+		} else if (x_visinfo->depth == 24) {
+			st3_fixup(
+					x_framebuffer[current_framebuffer],
+					rects->x,
+					rects->y,
+					rects->width,
+					rects->height);
 		}
 
-		XSync(x_disp, False);
+		XPutImage(
+				x_disp,
+				x_win,
+				x_gc,
+				x_framebuffer[0],
+				rects->x,
+				rects->y,
+				rects->x,
+				rects->y,
+				rects->width,
+				rects->height);
+		rects = rects->pnext;
 	}
 
+	XSync(x_disp, False);
 }
 
 static int dither;

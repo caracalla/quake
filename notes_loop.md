@@ -91,10 +91,10 @@ void _Host_Frame(double elapsed_time) {
 
 1. update random
 1. check if enough time has passed to render a new frame
-1. `Sys_SendKeyEvents` - get new key events from X
+1. `Sys_SendKeyEvents` - get new key (and mouse?) events from X
 	* while X has events pending, reads them into `keyq` with `GetEvent`
 	* each event in `keyq` is sent to `Key_Event`
-1. `IN_Commands` - get mouse events from X
+1. `IN_Commands` - turn mouse events into key events
 1. `Cbuf_Execute` - execute commands in command buffer
 	* reads commands from global sizebuf `cmd_text`
 	* calls `Cmd_ExecuteString` with each command
