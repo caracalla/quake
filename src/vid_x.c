@@ -29,11 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
@@ -56,7 +51,6 @@ float old_mouse_x;
 float old_mouse_y;
 int p_mouse_x;
 int p_mouse_y;
-int ignorenext;
 int bits_per_pixel;
 
 typedef struct {
@@ -79,14 +73,10 @@ static Window x_win;
 static GC x_gc;
 static Visual *x_vis;
 static XVisualInfo *x_visinfo;
-//static XImage *x_image;
-
-static int x_shmeventtype;
 
 static qboolean oktodraw = false;
 
-int current_framebuffer;
-static XImage *x_framebuffer[2] = {0, 0};
+static XImage *x_framebuffer = NULL;
 
 static int verbose = 0;
 
@@ -103,7 +93,9 @@ void (*vid_menukeyfn)(int key);
 void VID_MenuKey(int key);
 
 typedef unsigned short PIXEL16;
-typedef unsigned long PIXEL24;
+//typedef unsigned long PIXEL24;
+#include <stdint.h>
+typedef uint32_t PIXEL24;
 
 static PIXEL16 st2d_8to16table[256];
 static PIXEL24 st2d_8to24table[256];
@@ -332,9 +324,9 @@ void ResetFrameBuffer(void) {
 	int mem;
 	int pwidth;
 
-	if (x_framebuffer[0]) {
-		free(x_framebuffer[0]->data);
-		free(x_framebuffer[0]);
+	if (x_framebuffer) {
+		free(x_framebuffer->data);
+		free(x_framebuffer);
 	}
 
 	if (d_pzbuffer) {
@@ -371,7 +363,7 @@ void ResetFrameBuffer(void) {
 
 	mem = ((vid.width * pwidth + 7) &~ 7) * vid.height;
 
-	x_framebuffer[0] = XCreateImage(x_disp,
+	x_framebuffer = XCreateImage(x_disp,
 			x_vis,
 			x_visinfo->depth,
 			ZPixmap,
@@ -382,12 +374,9 @@ void ResetFrameBuffer(void) {
 			32,
 			0);
 
-	if (!x_framebuffer[0]) {
+	if (!x_framebuffer) {
 		Sys_Error("VID: XCreateImage failed\n");
 	}
-
-	vid.buffer = (byte*)(x_framebuffer[0]);
-	vid.conbuffer = vid.buffer;
 }
 
 // Called at startup to set up translation tables, takes 256 8 bit RGB values
@@ -401,7 +390,6 @@ void VID_Init(unsigned char *palette) {
 	int num_visuals;
 	int template_mask;
 
-	ignorenext = 0;
 	vid.width = 320;
 	vid.height = 200;
 	vid.maxwarpwidth = WARP_WIDTH;
@@ -410,7 +398,7 @@ void VID_Init(unsigned char *palette) {
 	vid.colormap = host_colormap;
 	// vid.cbits = VID_CBITS;
 	// vid.grades = VID_GRADES;
-	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
+	// vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
 
 	srandom(getpid());
 
@@ -438,10 +426,10 @@ void VID_Init(unsigned char *palette) {
 		sigaction(SIGTERM, &sa, 0);
 	}
 
-	XAutoRepeatOff(x_disp);
+	// XAutoRepeatOff(x_disp);
 
 	// for debugging only
-	XSynchronize(x_disp, True);
+	// XSynchronize(x_disp, True);
 
 	// check for command-line window size
 	if ((pnum = COM_CheckParm("-winsize"))) {
@@ -571,6 +559,7 @@ void VID_Init(unsigned char *palette) {
 		}
 	}
 
+#if 0 // would this ever be true?
 	if (x_visinfo->depth == 8) {
 		// create and upload the palette
 		if (x_visinfo->class == PseudoColor) {
@@ -579,6 +568,7 @@ void VID_Init(unsigned char *palette) {
 			XSetWindowColormap(x_disp, x_win, x_cmap);
 		}
 	}
+#endif
 
 	// inviso cursor
 	XDefineCursor(x_disp, x_win, CreateNullCursor(x_disp, x_win));
@@ -609,17 +599,14 @@ void VID_Init(unsigned char *palette) {
 
 	ResetFrameBuffer();
 
-	current_framebuffer = 0;
-	vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-	vid.buffer = x_framebuffer[0]->data;
+	vid.rowbytes = x_framebuffer->bytes_per_line;
+	vid.buffer = x_framebuffer->data;
 	vid.direct = 0;
-	vid.conbuffer = x_framebuffer[0]->data;
+	vid.conbuffer = x_framebuffer->data;
 	vid.conrowbytes = vid.rowbytes;
 	vid.conwidth = vid.width;
 	vid.conheight = vid.height;
 	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
-
-	// XSynchronize(x_disp, False);
 }
 
 void VID_ShiftPalette(unsigned char *p) {
@@ -630,7 +617,7 @@ void VID_ShiftPalette(unsigned char *p) {
 
 void VID_SetPalette(unsigned char *palette) {
 	int i;
-	XColor colors[256];
+	// XColor colors[256];
 
 	for (i = 0; i < 256; i++) {
 		st2d_8to16table[i]= xlib_rgb16(
@@ -644,6 +631,7 @@ void VID_SetPalette(unsigned char *palette) {
 				palette[i * 3 + 2]);
 	}
 
+#if 0
 	if (x_visinfo->class == PseudoColor && x_visinfo->depth == 8) {
 		if (palette != current_palette) {
 			memcpy(current_palette, palette, 768);
@@ -659,6 +647,7 @@ void VID_SetPalette(unsigned char *palette) {
 
 		XStoreColors(x_disp, x_cmap, colors, 256);
 	}
+#endif
 }
 
 // Called at shutdown
@@ -962,16 +951,16 @@ void GetEvent(void) {
 			break;
 
 		case MotionNotify:
-			if (_windowed_mouse.value) {
+			if (true || _windowed_mouse.value) {
 				mouse_x = (float) ((int)x_event.xmotion.x - (int)(vid.width / 2));
 				mouse_y = (float) ((int)x_event.xmotion.y - (int)(vid.height / 2));
 
-				// printf(
-				// 		"m: x=%d, y=%d, mx=%3.2f, my=%3.2f\n",
-				// 		x_event.xmotion.x,
-				// 		x_event.xmotion.y,
-				// 		mouse_x,
-				// 		mouse_y);
+				printf(
+						"m: x=%d, y=%d, mx=%3.2f, my=%3.2f\n",
+						x_event.xmotion.x,
+						x_event.xmotion.y,
+						mouse_x,
+						mouse_y);
 
 				/* move the mouse to the window center again */
 				XSelectInput(
@@ -1082,8 +1071,6 @@ void GetEvent(void) {
 // flushes the given rectangles from the view buffer to the screen
 
 void VID_Update(vrect_t *rects) {
-	vrect_t full;
-
 	// if the window changes dimension, skip this frame
 	if (config_notify) {
 		fprintf(stderr, "config notify\n");
@@ -1093,8 +1080,8 @@ void VID_Update(vrect_t *rects) {
 
 		ResetFrameBuffer();
 
-		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-		vid.buffer = x_framebuffer[current_framebuffer]->data;
+		vid.rowbytes = x_framebuffer->bytes_per_line;
+		vid.buffer = x_framebuffer->data;
 		vid.conbuffer = vid.buffer;
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;
@@ -1114,14 +1101,14 @@ void VID_Update(vrect_t *rects) {
 	while (rects) {
 		if (x_visinfo->depth == 16) {
 			st2_fixup(
-					x_framebuffer[current_framebuffer],
+					x_framebuffer,
 					rects->x,
 					rects->y,
 					rects->width,
 					rects->height);
 		} else if (x_visinfo->depth == 24) {
 			st3_fixup(
-					x_framebuffer[current_framebuffer],
+					x_framebuffer,
 					rects->x,
 					rects->y,
 					rects->width,
@@ -1132,7 +1119,7 @@ void VID_Update(vrect_t *rects) {
 				x_disp,
 				x_win,
 				x_gc,
-				x_framebuffer[0],
+				x_framebuffer,
 				rects->x,
 				rects->y,
 				rects->x,
