@@ -168,36 +168,43 @@ Returns 0.25 if a key was pressed and released during the frame,
 1.0 if held for the entire time
 ===============
 */
-float CL_KeyState (kbutton_t *key)
-{
-	float		val;
-	qboolean	impulsedown, impulseup, down;
+float CL_KeyState(kbutton_t *key) {
+	float val = 0;
+	qboolean impulsedown = key->state & 2;
+	qboolean impulseup = key->state & 4;
+	qboolean down = key->state & 1;
 
-	impulsedown = key->state & 2;
-	impulseup = key->state & 4;
-	down = key->state & 1;
-	val = 0;
-
-	if (impulsedown && !impulseup)
-		if (down)
+	if (impulsedown && !impulseup) {
+		if (down) {
 			val = 0.5;	// pressed and held this frame
-		else
+		} else {
 			val = 0;	//	I_Error ();
-	if (impulseup && !impulsedown)
-		if (down)
+		}
+	}
+
+	if (impulseup && !impulsedown) {
+		if (down) {
 			val = 0;	//	I_Error ();
-		else
+		} else {
 			val = 0;	// released this frame
-	if (!impulsedown && !impulseup)
-		if (down)
+		}
+	}
+
+	if (!impulsedown && !impulseup) {
+		if (down) {
 			val = 1.0;	// held the entire frame
-		else
+		} else {
 			val = 0;	// up the entire frame
-	if (impulsedown && impulseup)
-		if (down)
+		}
+	}
+
+	if (impulsedown && impulseup) {
+		if (down) {
 			val = 0.75;	// released and re-pressed this frame
-		else
+		} else {
 			val = 0.25;	// pressed and released this frame
+		}
+	}
 
 	key->state &= 1;		// clear impulses
 

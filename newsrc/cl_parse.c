@@ -335,7 +335,7 @@ void CL_ParseUpdate (int bits)
 	qboolean	forcelink;
 	entity_t	*ent;
 	int			num;
-	int			skin;
+	// int			skin;  // unused
 
 	if (cls.signon == SIGNONS - 1)
 	{	// first update is the final signon stage

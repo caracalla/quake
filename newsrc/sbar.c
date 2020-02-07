@@ -1166,7 +1166,7 @@ Sbar_DeathmatchOverlay
 */
 void Sbar_MiniDeathmatchOverlay (void)
 {
-	qpic_t			*pic;
+	// qpic_t			*pic;  // unused
 	int				i, k, l;
 	int				top, bottom;
 	int				x, y, f;

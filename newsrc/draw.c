@@ -109,7 +109,7 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	int		i;
+	// int		i;  // unused
 
 	draw_chars = W_GetLumpName ("conchars");
 	draw_disc = W_GetLumpName ("disc");

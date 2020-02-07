@@ -1,18 +1,22 @@
 # Quake
 
-My notes are in notes.md
+Adapted from https://github.com/mwh204/id-quake.x11.  My personal notes are in notes.md.
 
-Before installing the packages listed below, the following must be done to be able to install 32 bit (i386) packages:
+## Installation
+
+### newsrc
+
+This is my SDL
+
+### src folder
+
+This is the original source from https://github.com/mwh204/id-quake.x11.  
+
 1. `sudo dpkg --add-architecture i386`
 1. Check that it worked: `sudo dpkg --print-foreign-architectures`
 1. `sudo apt-get update`
-
-## Original README from https://github.com/mwh204/id-quake.x11
-
-this is a subset of id's release of quake with only the files required for the x11 build included.
-
-some libraries I had to install to compile it on debian amd64:
-linux-libc-dev:i386 g++-multilib libx11-dev:i386 libxext-dev:i386
+1. `sudo apt-get install linux-libc-dev:i386 g++-multilib libx11-dev:i386 libxext-dev:i386`
+1. `make run`
 
 ## Execution
 ```sh
@@ -21,9 +25,7 @@ make run
 ```
 
 ## TODO
-* remove the i386 dependency
-* remove the x11 dependency -- maybe render in framebuffer??
 * port to SDL
 	* input
 	* sound
-	* graphics
+	* graphics - DONE(ish)

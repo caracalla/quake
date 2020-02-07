@@ -383,10 +383,14 @@ SND_Spatialize
 */
 void SND_Spatialize(channel_t *ch)
 {
-    vec_t dot;
-    vec_t ldist, rdist, dist;
-    vec_t lscale, rscale, scale;
-    vec3_t source_vec;
+	vec_t dot;
+	// vec_t ldist;  // unused
+	// vec_t rdist;  // unused
+	vec_t dist;
+	vec_t lscale;
+	vec_t rscale;
+	vec_t scale;
+	vec3_t source_vec;
 	sfx_t *snd;
 
 // anything coming from the view entity will allways be full volume

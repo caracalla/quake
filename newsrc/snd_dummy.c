@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int audio_fd;
 int snd_inited;
 
-static int tryrates[] = { 11025, 22051, 44100, 8000 };
+// static int tryrates[] = { 11025, 22051, 44100, 8000 };  // unused
 
 qboolean SNDDMA_Init(void) {
 	return false;

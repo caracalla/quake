@@ -33,23 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-static qboolean cdValid = false;
-static qboolean	playing = false;
-static qboolean	wasPlaying = false;
-static qboolean	initialized = false;
-static qboolean	enabled = true;
-static qboolean playLooping = false;
-static float	cdvolume;
-static byte 	remap[100];
-static byte		playTrack;
-static byte		maxTrack;
+static void CDAudio_Eject(void) {}
 
-static int cdfile = -1;
-static char cd_dev[64] = "/dev/cdrom";
-
-static void CDAudio_Eject(void) { }
-
-static void CDAudio_CloseDoor(void) { }
+static void CDAudio_CloseDoor(void) {}
 
 static int CDAudio_GetAudioDiskInfo(void) {
 	return 0;
