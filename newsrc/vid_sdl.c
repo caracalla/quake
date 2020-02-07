@@ -35,9 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "d_local.h"
 
-#define RES_X 640
-#define RES_Y 480
-
 cvar_t m_filter = {"m_filter", "0", true};  // mouse smoothing?
 
 qboolean mouse_avail;  // checks if mouse has been inited
@@ -68,8 +65,6 @@ SDL_Event event;
 
 static qboolean oktodraw = false;
 
-static byte current_palette[768];
-
 static long SDL_highhunkmark;
 static long SDL_buffersize;
 
@@ -81,10 +76,12 @@ void (*vid_menukeyfn)(int key);
 
 typedef uint32_t PIXEL24;
 
-const size_t pixel_buffer_size = RES_X * RES_Y * sizeof(PIXEL24);
+#define RES_X 640
+#define RES_Y 480
+#define PIXEL_BUFFER_SIZE RES_X * RES_Y * sizeof(PIXEL24)
 
 typedef struct {
-	char data[pixel_buffer_size];
+	char data[PIXEL_BUFFER_SIZE];
 	int bytes_per_line;
 } pixeldata;
 
@@ -157,7 +154,6 @@ PIXEL24 xlib_rgb24(int r, int g, int b) {
 }
 
 void st3_fixup(int x, int y, int width, int height) {
-	int xi;
 	int yi;
 	unsigned char *src;
 	PIXEL24 *dest;
@@ -196,19 +192,7 @@ void st3_fixup(int x, int y, int width, int height) {
 	}
 }
 
-
-// ========================================================================
-// Tragic death handler
-// ========================================================================
-
-void TragicDeath(int signal_num) {
-	Sys_Error("This death brought to you by the number %d\n", signal_num);
-}
-
 void ResetFrameBuffer(void) {
-	int mem;
-	int pwidth;
-
 	if (d_pzbuffer) {
 		D_FlushCaches();
 		Hunk_FreeToHighMark(SDL_highhunkmark);
@@ -239,14 +223,11 @@ void ResetFrameBuffer(void) {
 // Called at startup to set up translation tables, takes 256 8 bit RGB values
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
-
 void VID_Init(unsigned char *palette) {
-	int pnum;  // used for window sizee
-
 	pixel_buffer.bytes_per_line = RES_X * sizeof(PIXEL24);
 
-	vid.width = RES_X; // 320;
-	vid.height = RES_Y; // 200;
+	vid.width = RES_X;
+	vid.height = RES_Y;
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.numpages = 2;
@@ -255,18 +236,10 @@ void VID_Init(unsigned char *palette) {
 
 	srandom(getpid());
 
-	// catch signals so i can turn on auto-repeat
-	{
-		struct sigaction sa;
-		sigaction(SIGINT, 0, &sa);
-		sa.sa_handler = TragicDeath;
-		sigaction(SIGINT, &sa, 0);
-		sigaction(SIGTERM, &sa, 0);
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+		SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+		Sys_Quit();
 	}
-
-	// if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
-	// 	SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-	// }
 
 	window = SDL_CreateWindow(
 			"quake",
@@ -278,11 +251,10 @@ void VID_Init(unsigned char *palette) {
 	renderer = SDL_CreateRenderer(window, -1, 0);
 	textureSDL = SDL_CreateTexture(
 			renderer,
-			SDL_PIXELFORMAT_RGBX8888,
-			SDL_TEXTUREACCESS_STATIC,
+			SDL_PIXELFORMAT_ARGB8888,
+			SDL_TEXTUREACCESS_STREAMING,
 			vid.width,
 			vid.height);
-	// screenSurface = SDL_GetWindowSurface(window);
 
 	// capture mouse
 	SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -302,10 +274,10 @@ void VID_Init(unsigned char *palette) {
 
 	ResetFrameBuffer();
 
-	vid.rowbytes = pixel_buffer.bytes_per_line; // x_framebuffer[0]->bytes_per_line;
-	vid.buffer = pixel_buffer.data; // x_framebuffer[0]->data;
+	vid.rowbytes = pixel_buffer.bytes_per_line;
+	vid.buffer = (pixel_t *)pixel_buffer.data;
 	vid.direct = 0;
-	vid.conbuffer = pixel_buffer.data; // x_framebuffer[0]->data;
+	vid.conbuffer = (pixel_t *)pixel_buffer.data;
 	vid.conrowbytes = vid.rowbytes;
 	vid.conwidth = vid.width;
 	vid.conheight = vid.height;
@@ -328,8 +300,6 @@ void VID_SetPalette(unsigned char *palette) {
 				palette[i * 3 + 2]);
 	}
 }
-
-// Called at shutdown
 
 void VID_Shutdown(void) {
 	Con_Printf("VID_Shutdown\n");
@@ -714,7 +684,6 @@ void GetEvent(void) {
 }
 
 // flushes the given rectangles from the view buffer to the screen
-
 void VID_Update(vrect_t *rects) {
 	// if the window changes dimension, skip this frame
 	if (config_notify) {
@@ -725,8 +694,8 @@ void VID_Update(vrect_t *rects) {
 
 		ResetFrameBuffer();
 
-		vid.rowbytes = pixel_buffer.bytes_per_line; // x_framebuffer[0]->bytes_per_line;
-		vid.buffer = pixel_buffer.data; // x_framebuffer[0]->data;
+		vid.rowbytes = pixel_buffer.bytes_per_line;
+		vid.buffer = (pixel_t *)pixel_buffer.data;
 		vid.conbuffer = vid.buffer;
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;
