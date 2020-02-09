@@ -611,6 +611,11 @@ int ProcessKey(SDL_Keysym keysym) {
 			key = '\\';
 			break;
 
+		case SDL_SCANCODE_LSHIFT:
+		case SDL_SCANCODE_RSHIFT:
+			key = K_SHIFT;
+			break;
+
 		key_scancode(0);
 		key_scancode(1);
 		key_scancode(2);
