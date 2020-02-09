@@ -1067,7 +1067,7 @@ void COM_CheckRegistered(void) {
 		Con_Printf("Playing shareware version.\n");
 
 		if (com_modified) {
-			Sys_Error("You must have the registered version to use modified games");
+			// Sys_Error("You must have the registered version to use modified games");
 		}
 
 		return;

@@ -81,8 +81,8 @@ void (*vid_menukeyfn)(int key);
 
 typedef uint32_t PIXEL24;
 
-#define RES_X 640
-#define RES_Y 480
+#define RES_X 960 // 640
+#define RES_Y 720 // 480
 #define PIXEL_BUFFER_SIZE RES_X * RES_Y * sizeof(PIXEL24)
 
 typedef struct {
@@ -591,6 +591,36 @@ int ProcessKey(SDL_Keysym keysym) {
 			key = K_SPACE;
 			break;
 
+		case SDL_SCANCODE_BACKSPACE:
+			key = K_BACKSPACE;
+			break;
+
+		case SDL_SCANCODE_GRAVE:
+			key = '`';
+			break;
+
+		case SDL_SCANCODE_EQUALS:
+			key = '+';  // FIXME: shitty hack to get + to work
+			break;
+
+		case SDL_SCANCODE_MINUS:
+			key = '-';
+			break;
+
+		case SDL_SCANCODE_BACKSLASH:
+			key = '\\';
+			break;
+
+		key_scancode(0);
+		key_scancode(1);
+		key_scancode(2);
+		key_scancode(3);
+		key_scancode(4);
+		key_scancode(5);
+		key_scancode(6);
+		key_scancode(7);
+		key_scancode(8);
+		key_scancode(9);
 		key_scancode(A);
 		key_scancode(B);
 		key_scancode(C);
