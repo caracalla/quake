@@ -951,7 +951,7 @@ void GetEvent(void) {
 			break;
 
 		case MotionNotify:
-			if (true || _windowed_mouse.value) {
+			if (_windowed_mouse.value) {
 				mouse_x = (float) ((int)x_event.xmotion.x - (int)(vid.width / 2));
 				mouse_y = (float) ((int)x_event.xmotion.y - (int)(vid.height / 2));
 
