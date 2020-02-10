@@ -125,21 +125,23 @@ Returns false if the entity removed itself.
 */
 qboolean SV_RunThink (edict_t *ent)
 {
-	float	thinktime;
+	float	thinktime = ent->v.nextthink;
 
-	thinktime = ent->v.nextthink;
-	if (thinktime <= 0 || thinktime > sv.time + host_frametime)
+	if (thinktime <= 0 || thinktime > sv.time + host_frametime) {
 		return true;
+	}
 
-	if (thinktime < sv.time)
-		thinktime = sv.time;	// don't let things stay in the past.
-								// it is possible to start that way
-								// by a trigger with a local time.
+	if (thinktime < sv.time) {
+		// don't let things stay in the past.  it is possible to start that way by
+		// a trigger with a local time.
+		thinktime = sv.time;
+	}
+
 	ent->v.nextthink = 0;
 	pr_global_struct->time = thinktime;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
 	pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
-	PR_ExecuteProgram (ent->v.think);
+	PR_ExecuteProgram(ent->v.think);
 	return !ent->free;
 }
 
@@ -1056,78 +1058,80 @@ SV_Physics_Client
 Player character actions
 ================
 */
-void SV_Physics_Client (edict_t	*ent, int num)
-{
-	if ( ! svs.clients[num-1].active )
-		return;		// unconnected slot
-
-//
-// call standard client pre-think
-//
-	pr_global_struct->time = sv.time;
-	pr_global_struct->self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (pr_global_struct->PlayerPreThink);
-
-//
-// do a move
-//
-	SV_CheckVelocity (ent);
-
-//
-// decide which move function to call
-//
-	switch ((int)ent->v.movetype)
-	{
-	case MOVETYPE_NONE:
-		if (!SV_RunThink (ent))
-			return;
-		break;
-
-	case MOVETYPE_WALK:
-		if (!SV_RunThink (ent))
-			return;
-		if (!SV_CheckWater (ent) && ! ((int)ent->v.flags & FL_WATERJUMP) )
-			SV_AddGravity (ent);
-		SV_CheckStuck (ent);
-#ifdef QUAKE2
-		VectorAdd (ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
-#endif
-		SV_WalkMove (ent);
-
-#ifdef QUAKE2
-		VectorSubtract (ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
-#endif
-		break;
-
-	case MOVETYPE_TOSS:
-	case MOVETYPE_BOUNCE:
-		SV_Physics_Toss (ent);
-		break;
-
-	case MOVETYPE_FLY:
-		if (!SV_RunThink (ent))
-			return;
-		SV_FlyMove (ent, host_frametime, NULL);
-		break;
-
-	case MOVETYPE_NOCLIP:
-		if (!SV_RunThink (ent))
-			return;
-		VectorMA (ent->v.origin, host_frametime, ent->v.velocity, ent->v.origin);
-		break;
-
-	default:
-		Sys_Error ("SV_Physics_client: bad movetype %i", (int)ent->v.movetype);
+void SV_Physics_Client(edict_t *ent, int num) {
+	if ( ! svs.clients[num - 1].active ) {
+		// unconnected slot
+		return;
 	}
 
-//
-// call standard player post-think
-//
-	SV_LinkEdict (ent, true);
+	// call standard client pre-think
+	pr_global_struct->time = sv.time;
+	pr_global_struct->self = EDICT_TO_PROG(ent);
+	PR_ExecuteProgram(pr_global_struct->PlayerPreThink);
+
+	// do a move
+	SV_CheckVelocity(ent);
+
+	// decide which move function to call
+	switch ((int)ent->v.movetype) {
+		case MOVETYPE_NONE:
+			if (!SV_RunThink(ent)) {
+				return;
+			}
+
+			break;
+
+		case MOVETYPE_WALK:
+			if (!SV_RunThink(ent)) {
+				return;
+			}
+
+			if (!SV_CheckWater(ent) && ! ((int)ent->v.flags & FL_WATERJUMP)) {
+				SV_AddGravity(ent);
+			}
+
+			SV_CheckStuck(ent);
+#ifdef QUAKE2
+			VectorAdd(ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
+#endif
+			SV_WalkMove(ent);
+
+#ifdef QUAKE2
+			VectorSubtract(ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
+#endif
+			break;
+
+		case MOVETYPE_TOSS:
+		case MOVETYPE_BOUNCE:
+			SV_Physics_Toss(ent);
+			break;
+
+		case MOVETYPE_FLY:
+			if (!SV_RunThink(ent)) {
+				return;
+			}
+
+			SV_FlyMove(ent, host_frametime, NULL);
+			break;
+
+		case MOVETYPE_NOCLIP:
+			if (!SV_RunThink(ent)) {
+				return;
+			}
+
+			VectorMA(ent->v.origin, host_frametime, ent->v.velocity, ent->v.origin);
+			break;
+
+		default:
+			Sys_Error("SV_Physics_client: bad movetype %i", (int)ent->v.movetype);
+	}
+
+	// call standard player post-think
+	SV_LinkEdict(ent, true);
 
 	pr_global_struct->time = sv.time;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (pr_global_struct->PlayerPostThink);
+	PR_ExecuteProgram(pr_global_struct->PlayerPostThink);
 }
 
 //============================================================================
@@ -1504,57 +1508,57 @@ SV_Physics
 
 ================
 */
-void SV_Physics (void)
-{
-	int		i;
-	edict_t	*ent;
+void SV_Physics(void) {
+	int i;
+	edict_t *ent;
 
-// let the progs know that a new frame has started
+	// let the progs know that a new frame has started
 	pr_global_struct->self = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->time = sv.time;
-	PR_ExecuteProgram (pr_global_struct->StartFrame);
+	PR_ExecuteProgram(pr_global_struct->StartFrame);
 
-//SV_CheckAllEnts ();
+	// SV_CheckAllEnts ();
 
-//
-// treat each object in turn
-//
+	// treat each object in turn
 	ent = sv.edicts;
-	for (i=0 ; i<sv.num_edicts ; i++, ent = NEXT_EDICT(ent))
-	{
-		if (ent->free)
-			continue;
 
-		if (pr_global_struct->force_retouch)
-		{
-			SV_LinkEdict (ent, true);	// force retouch even for stationary
+	for (i = 0; i < sv.num_edicts; i++, ent = NEXT_EDICT(ent)) {
+		if (ent->free) {
+			continue;
 		}
 
-		if (i > 0 && i <= svs.maxclients)
+		if (pr_global_struct->force_retouch) {
+			// force retouch even for stationary
+			SV_LinkEdict(ent, true);
+		}
+
+		if (i > 0 && i <= svs.maxclients) {
 			SV_Physics_Client (ent, i);
-		else if (ent->v.movetype == MOVETYPE_PUSH)
+		} else if (ent->v.movetype == MOVETYPE_PUSH) {
 			SV_Physics_Pusher (ent);
-		else if (ent->v.movetype == MOVETYPE_NONE)
+		} else if (ent->v.movetype == MOVETYPE_NONE) {
 			SV_Physics_None (ent);
 #ifdef QUAKE2
-		else if (ent->v.movetype == MOVETYPE_FOLLOW)
+		} else if (ent->v.movetype == MOVETYPE_FOLLOW) {
 			SV_Physics_Follow (ent);
 #endif
-		else if (ent->v.movetype == MOVETYPE_NOCLIP)
+		} else if (ent->v.movetype == MOVETYPE_NOCLIP) {
 			SV_Physics_Noclip (ent);
-		else if (ent->v.movetype == MOVETYPE_STEP)
+		} else if (ent->v.movetype == MOVETYPE_STEP) {
 			SV_Physics_Step (ent);
-		else if (ent->v.movetype == MOVETYPE_TOSS
-		|| ent->v.movetype == MOVETYPE_BOUNCE
+		} else if (
+				ent->v.movetype == MOVETYPE_TOSS
+				|| ent->v.movetype == MOVETYPE_BOUNCE
 #ifdef QUAKE2
-		|| ent->v.movetype == MOVETYPE_BOUNCEMISSILE
+				|| ent->v.movetype == MOVETYPE_BOUNCEMISSILE
 #endif
-		|| ent->v.movetype == MOVETYPE_FLY
-		|| ent->v.movetype == MOVETYPE_FLYMISSILE)
+				|| ent->v.movetype == MOVETYPE_FLY
+				|| ent->v.movetype == MOVETYPE_FLYMISSILE) {
 			SV_Physics_Toss (ent);
-		else
+		} else {
 			Sys_Error ("SV_Physics: bad movetype %i", (int)ent->v.movetype);
+		}
 	}
 
 	if (pr_global_struct->force_retouch)

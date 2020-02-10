@@ -105,3 +105,23 @@ void _Host_Frame(double elapsed_time) {
 1. `SCR_UpdateScreen` - ???
 1. update audio
 1. lots of time manipulation spread around in here
+
+## Host_ServerFrame
+
+1. SV_ClearDatagram() - clears out the datagram buffer
+1. SV_CheckForNewClients()
+1. SV_RunClients() - for each client:
+	* SV_ReadClientMessage()
+	* SV_ClientThink() - handle movement
+1. SV_Physics()
+	* PR_ExecuteProgram(pr_global_struct->StartFrame)
+	* for each edict runs physics
+		* for clients, SV_Physics_Client()
+			* PR_ExecuteProgram(pr_global_struct->PlayerPreThink)
+			* SV_RunThink()
+				* PR_ExecuteProgram(ent->v.think)
+			* SV_AddGravity()
+			* SV_CheckStuck()
+			* SV_WalkMove()
+			* PR_ExecuteProgram(pr_global_struct->PlayerPostThink);
+1. SV_SendClientMessages()

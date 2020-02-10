@@ -377,56 +377,49 @@ the move fields specify an intended velocity in pix/sec
 the angle fields specify an exact angular motion in degrees
 ===================
 */
-void SV_ClientThink (void)
-{
-	vec3_t		v_angle;
+void SV_ClientThink(void) {
+	vec3_t v_angle;
 
-	if (sv_player->v.movetype == MOVETYPE_NONE)
+	if (sv_player->v.movetype == MOVETYPE_NONE) {
 		return;
+	}
 
 	onground = (int)sv_player->v.flags & FL_ONGROUND;
 
 	origin = sv_player->v.origin;
 	velocity = sv_player->v.velocity;
 
-	DropPunchAngle ();
+	DropPunchAngle();
 
-//
-// if dead, behave differently
-//
-	if (sv_player->v.health <= 0)
+	// if dead, behave differently
+	if (sv_player->v.health <= 0) {
 		return;
+	}
 
-//
-// angles
-// show 1/3 the pitch angle and all the roll angle
+	// show 1/3 the pitch angle and all the roll angle
 	cmd = host_client->cmd;
 	angles = sv_player->v.angles;
 
-	VectorAdd (sv_player->v.v_angle, sv_player->v.punchangle, v_angle);
-	angles[ROLL] = V_CalcRoll (sv_player->v.angles, sv_player->v.velocity)*4;
-	if (!sv_player->v.fixangle)
-	{
-		angles[PITCH] = -v_angle[PITCH]/3;
+	VectorAdd(sv_player->v.v_angle, sv_player->v.punchangle, v_angle);
+	angles[ROLL] = V_CalcRoll(sv_player->v.angles, sv_player->v.velocity) * 4;
+
+	if (!sv_player->v.fixangle) {
+		angles[PITCH] = -v_angle[PITCH] / 3;
 		angles[YAW] = v_angle[YAW];
 	}
 
-	if ( (int)sv_player->v.flags & FL_WATERJUMP )
-	{
-		SV_WaterJump ();
-		return;
-	}
-//
-// walk
-//
-	if ( (sv_player->v.waterlevel >= 2)
-	&& (sv_player->v.movetype != MOVETYPE_NOCLIP) )
-	{
-		SV_WaterMove ();
+	if ((int)sv_player->v.flags & FL_WATERJUMP) {
+		SV_WaterJump();
 		return;
 	}
 
-	SV_AirMove ();
+	// walk
+	if ((sv_player->v.waterlevel >= 2) && (sv_player->v.movetype != MOVETYPE_NOCLIP)) {
+		SV_WaterMove();
+		return;
+	}
+
+	SV_AirMove();
 }
 
 
@@ -602,32 +595,31 @@ nextmsg:
 SV_RunClients
 ==================
 */
-void SV_RunClients (void)
-{
-	int				i;
+void SV_RunClients(void) {
+	int i;
 
-	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
-	{
-		if (!host_client->active)
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++) {
+		if (!host_client->active) {
 			continue;
+		}
 
 		sv_player = host_client->edict;
 
-		if (!SV_ReadClientMessage ())
-		{
-			SV_DropClient (false);	// client misbehaved...
+		if (!SV_ReadClientMessage()) {
+			// client misbehaved...
+			SV_DropClient(false);
 			continue;
 		}
 
-		if (!host_client->spawned)
-		{
-		// clear client movement until a new packet is received
-			memset (&host_client->cmd, 0, sizeof(host_client->cmd));
+		if (!host_client->spawned) {
+			// clear client movement until a new packet is received
+			memset(&host_client->cmd, 0, sizeof(host_client->cmd));
 			continue;
 		}
 
-// always pause in single player if in console or menus
-		if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) )
-			SV_ClientThink ();
+		// always pause in single player if in console or menus
+		if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game)) {
+			SV_ClientThink();
+		}
 	}
 }

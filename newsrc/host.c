@@ -771,6 +771,7 @@ void Host_Frame(double elapsed_time) {
 	int m;
 
 	if (!serverprofile.value) {
+		// Don't display server stats, just run
 		_Host_Frame(elapsed_time);
 		return;
 	}

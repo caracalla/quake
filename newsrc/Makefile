@@ -21,4 +21,4 @@ clean:
 distclean: clean
 
 run: all
-	./$(program_NAME) -nosound -mem 16 -basedir ".." +map e1m1 -game new
+	./$(program_NAME) -nosound -mem 16 -basedir ".." +map e1m1
