@@ -515,17 +515,17 @@ void IN_Move(usercmd_t *cmd) {
 	mouse_x *= sensitivity.value;
 	mouse_y *= sensitivity.value;
 
-	if ((in_strafe.state & 1) || (lookstrafe.value && (in_mlook.state & 1))) {
+	if ((in_strafe.state & 1) || (lookstrafe.value && (in_mlook.value))) {
 		cmd->sidemove += m_side.value * mouse_x;
 	} else {
 		cl.viewangles[YAW] -= m_yaw.value * mouse_x;
 	}
 
-	if (in_mlook.state & 1) {
+	if (in_mlook.value) {
 		V_StopPitchDrift();
 	}
 
-	if ((in_mlook.state & 1) && !(in_strafe.state & 1)) {
+	if ((in_mlook.value) && !(in_strafe.state & 1)) {
 		cl.viewangles[PITCH] += m_pitch.value * mouse_y;
 
 		if (cl.viewangles[PITCH] > 80) {
@@ -554,7 +554,10 @@ void IN_Move(usercmd_t *cmd) {
 
 #define key_scancode(letter) \
 		case SDL_SCANCODE_##letter: \
-			key = CHARIFY(letter) - 'A' + 'a'; \
+			key = CHARIFY(letter); \
+			if (key >= 'A' && key <= 'Z') { \
+				key = key - 'A' + 'a'; \
+			} \
 			break
 
 int ProcessKey(SDL_Keysym keysym) {

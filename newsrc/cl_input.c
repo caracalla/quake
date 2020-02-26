@@ -46,11 +46,25 @@ state bit 2 is edge triggered on the down to up transition
 */
 
 
-kbutton_t	in_mlook, in_klook;
-kbutton_t	in_left, in_right, in_forward, in_back;
-kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
-kbutton_t	in_up, in_down;
+kbutton_t in_klook;
+
+kbutton_t in_left;
+kbutton_t in_right;
+kbutton_t in_forward;
+kbutton_t in_back;
+
+kbutton_t in_lookup;
+kbutton_t in_lookdown;
+kbutton_t in_moveleft;
+kbutton_t in_moveright;
+
+kbutton_t in_strafe;
+kbutton_t in_speed;
+kbutton_t in_use;
+kbutton_t in_jump;
+kbutton_t in_attack;
+kbutton_t in_up;
+kbutton_t in_down;
 
 int			in_impulse;
 
@@ -116,13 +130,6 @@ void KeyUp (kbutton_t *b)
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
-void IN_MLookDown (void) {KeyDown(&in_mlook);}
-void IN_MLookUp (void) {
-	KeyUp(&in_mlook);
-	if ( !(in_mlook.state&1) &&  lookspring.value) {
-		V_StartPitchDrift();
-	}
-}
 void IN_UpDown(void) {KeyDown(&in_up);}
 void IN_UpUp(void) {KeyUp(&in_up);}
 void IN_DownDown(void) {KeyDown(&in_down);}
@@ -217,17 +224,19 @@ float CL_KeyState(kbutton_t *key) {
 
 //==========================================================================
 
-cvar_t	cl_upspeed = {"cl_upspeed","200"};
-cvar_t	cl_forwardspeed = {"cl_forwardspeed","200", true};
-cvar_t	cl_backspeed = {"cl_backspeed","200", true};
-cvar_t	cl_sidespeed = {"cl_sidespeed","350"};
+cvar_t cl_upspeed = {"cl_upspeed", "200"};
+cvar_t cl_forwardspeed = {"cl_forwardspeed", "200", true};
+cvar_t cl_backspeed = {"cl_backspeed", "200", true};
+cvar_t cl_sidespeed = {"cl_sidespeed", "350"};
 
-cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0"};
+cvar_t cl_movespeedkey = {"cl_movespeedkey", "2.0"};
 
-cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
-cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
+cvar_t cl_yawspeed = {"cl_yawspeed", "140"};
+cvar_t cl_pitchspeed = {"cl_pitchspeed", "150"};
 
-cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
+cvar_t cl_anglespeedkey = {"cl_anglespeedkey", "1.5"};
+
+cvar_t in_mlook = {"in_mlook", "1", true};
 
 
 /*
@@ -449,6 +458,4 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
-	Cmd_AddCommand ("+mlook", IN_MLookDown);
-	Cmd_AddCommand ("-mlook", IN_MLookUp);
 }

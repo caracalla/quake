@@ -714,43 +714,44 @@ void CL_SendCmd (void)
 CL_Init
 =================
 */
-void CL_Init (void)
-{
-	SZ_Alloc (&cls.message, 1024);
+void CL_Init(void) {
+	SZ_Alloc(&cls.message, 1024);
 
-	CL_InitInput ();
-	CL_InitTEnts ();
+	CL_InitInput();
+	CL_InitTEnts();
 
 //
 // register our commands
 //
-	Cvar_RegisterVariable (&cl_name);
-	Cvar_RegisterVariable (&cl_color);
-	Cvar_RegisterVariable (&cl_upspeed);
-	Cvar_RegisterVariable (&cl_forwardspeed);
-	Cvar_RegisterVariable (&cl_backspeed);
-	Cvar_RegisterVariable (&cl_sidespeed);
-	Cvar_RegisterVariable (&cl_movespeedkey);
-	Cvar_RegisterVariable (&cl_yawspeed);
-	Cvar_RegisterVariable (&cl_pitchspeed);
-	Cvar_RegisterVariable (&cl_anglespeedkey);
-	Cvar_RegisterVariable (&cl_shownet);
-	Cvar_RegisterVariable (&cl_nolerp);
-	Cvar_RegisterVariable (&lookspring);
-	Cvar_RegisterVariable (&lookstrafe);
-	Cvar_RegisterVariable (&sensitivity);
+	Cvar_RegisterVariable(&cl_name);
+	Cvar_RegisterVariable(&cl_color);
+	Cvar_RegisterVariable(&cl_upspeed);
+	Cvar_RegisterVariable(&cl_forwardspeed);
+	Cvar_RegisterVariable(&cl_backspeed);
+	Cvar_RegisterVariable(&cl_sidespeed);
+	Cvar_RegisterVariable(&cl_movespeedkey);
+	Cvar_RegisterVariable(&cl_yawspeed);
+	Cvar_RegisterVariable(&cl_pitchspeed);
+	Cvar_RegisterVariable(&cl_anglespeedkey);
+	Cvar_RegisterVariable(&cl_shownet);
+	Cvar_RegisterVariable(&cl_nolerp);
+	Cvar_RegisterVariable(&lookspring);
+	Cvar_RegisterVariable(&lookstrafe);
+	Cvar_RegisterVariable(&sensitivity);
 
-	Cvar_RegisterVariable (&m_pitch);
-	Cvar_RegisterVariable (&m_yaw);
-	Cvar_RegisterVariable (&m_forward);
-	Cvar_RegisterVariable (&m_side);
+	Cvar_RegisterVariable(&in_mlook);
 
-//	Cvar_RegisterVariable (&cl_autofire);
+	Cvar_RegisterVariable(&m_pitch);
+	Cvar_RegisterVariable(&m_yaw);
+	Cvar_RegisterVariable(&m_forward);
+	Cvar_RegisterVariable(&m_side);
 
-	Cmd_AddCommand ("entities", CL_PrintEntities_f);
-	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
-	Cmd_AddCommand ("record", CL_Record_f);
-	Cmd_AddCommand ("stop", CL_Stop_f);
-	Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
+	// Cvar_RegisterVariable(&cl_autofire);
+
+	Cmd_AddCommand("entities", CL_PrintEntities_f);
+	Cmd_AddCommand("disconnect", CL_Disconnect_f);
+	Cmd_AddCommand("record", CL_Record_f);
+	Cmd_AddCommand("stop", CL_Stop_f);
+	Cmd_AddCommand("playdemo", CL_PlayDemo_f);
+	Cmd_AddCommand("timedemo", CL_TimeDemo_f);
 }
