@@ -21,8 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-cvar_t	*cvar_vars;
-char	*cvar_null_string = "";
+cvar_t *cvar_vars;
+char *cvar_null_string = "";
 
 /*
 ============
@@ -46,14 +46,14 @@ cvar_t *Cvar_FindVar(char *var_name) {
 Cvar_VariableValue
 ============
 */
-float	Cvar_VariableValue (char *var_name)
-{
-	cvar_t	*var;
+float Cvar_VariableValue(char *var_name) {
+	cvar_t *var = Cvar_FindVar(var_name);
 
-	var = Cvar_FindVar (var_name);
-	if (!var)
+	if (!var) {
 		return 0;
-	return Q_atof (var->string);
+	}
+
+	return Q_atof(var->string);
 }
 
 
@@ -62,13 +62,13 @@ float	Cvar_VariableValue (char *var_name)
 Cvar_VariableString
 ============
 */
-char *Cvar_VariableString (char *var_name)
-{
-	cvar_t *var;
+char *Cvar_VariableString(char *var_name) {
+	cvar_t *var = Cvar_FindVar(var_name);
 
-	var = Cvar_FindVar (var_name);
-	if (!var)
+	if (!var) {
 		return cvar_null_string;
+	}
+
 	return var->string;
 }
 
@@ -78,20 +78,20 @@ char *Cvar_VariableString (char *var_name)
 Cvar_CompleteVariable
 ============
 */
-char *Cvar_CompleteVariable (char *partial)
-{
-	cvar_t		*cvar;
-	int			len;
+char *Cvar_CompleteVariable(char *partial) {
+	cvar_t *cvar;
+	int len = Q_strlen(partial);
 
-	len = Q_strlen(partial);
-
-	if (!len)
+	if (!len) {
 		return NULL;
+	}
 
-// check functions
-	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-		if (!Q_strncmp (partial,cvar->name, len))
+	// check functions
+	for (cvar = cvar_vars; cvar; cvar = cvar->next) {
+		if (!Q_strncmp (partial,cvar->name, len)) {
 			return cvar->name;
+		}
+	}
 
 	return NULL;
 }
@@ -103,24 +103,22 @@ Cvar_Set
 ============
 */
 void Cvar_Set(char *var_name, char *value) {
-	cvar_t *var;
-	qboolean changed;
-
-	var = Cvar_FindVar(var_name);
+	cvar_t *var = Cvar_FindVar(var_name);
 
 	if (!var) {
 		// there is an error in C code if this happens
-		Con_Printf ("Cvar_Set: variable %s not found\n", var_name);
+		Con_Printf("Cvar_Set: variable %s not found\n", var_name);
 		return;
 	}
 
-	changed = Q_strcmp(var->string, value);
+	qboolean changed = Q_strcmp(var->string, value);
 
 	Z_Free(var->string);  // free the old value string
 
-	var->string = Z_Malloc(Q_strlen(value)+1);
+	var->string = Z_Malloc(Q_strlen(value) + 1);
 	Q_strcpy(var->string, value);
 	var->value = Q_atof(var->string);
+
 	if (var->server && changed) {
 		if (sv.active) {
 			SV_BroadcastPrintf("\"%s\" changed to \"%s\"\n", var->name, var->string);
@@ -136,7 +134,7 @@ Cvar_SetValue
 void Cvar_SetValue(char *var_name, float value) {
 	char val[32];
 
-	sprintf(val, "%f",value);
+	sprintf(val, "%f", value);
 	Cvar_Set(var_name, val);
 }
 
@@ -149,8 +147,6 @@ Adds a freestanding variable to the variable list.
 ============
 */
 void Cvar_RegisterVariable(cvar_t *variable) {
-	char *oldstr;
-
 	// first check to see if it has allready been defined
 	if (Cvar_FindVar(variable->name)) {
 		Con_Printf("Can't register variable %s, already defined\n", variable->name);
@@ -164,7 +160,7 @@ void Cvar_RegisterVariable(cvar_t *variable) {
 	}
 
 	// copy the value off, because future sets will Z_Free it
-	oldstr = variable->string;
+	char *oldstr = variable->string;
 	variable->string = Z_Malloc(Q_strlen(variable->string) + 1);
 	Q_strcpy(variable->string, oldstr);
 	variable->value = Q_atof(variable->string);
@@ -182,10 +178,8 @@ Handles variable inspection and changing from the console
 ============
 */
 qboolean Cvar_Command(void) {
-	cvar_t *var;
+	cvar_t *var = Cvar_FindVar(Cmd_Argv(0));
 
-	// check variables
-	var = Cvar_FindVar(Cmd_Argv(0));
 	if (!var) {
 		return false;
 	}
@@ -209,11 +203,12 @@ Writes lines containing "set variable value" for all variables
 with the archive flag set to true.
 ============
 */
-void Cvar_WriteVariables (FILE *f)
-{
-	cvar_t	*var;
+void Cvar_WriteVariables(FILE *f) {
+	cvar_t *var;
 
-	for (var = cvar_vars ; var ; var = var->next)
-		if (var->archive)
-			fprintf (f, "%s \"%s\"\n", var->name, var->string);
+	for (var = cvar_vars; var; var = var->next) {
+		if (var->archive) {
+			fprintf(f, "%s \"%s\"\n", var->name, var->string);
+		}
+	}
 }

@@ -594,6 +594,10 @@ int ProcessKey(SDL_Keysym keysym) {
 			key = K_SPACE;
 			break;
 
+		case SDL_SCANCODE_TAB:
+			key = K_TAB;
+			break;
+
 		case SDL_SCANCODE_BACKSPACE:
 			key = K_BACKSPACE;
 			break;
