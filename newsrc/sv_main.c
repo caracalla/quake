@@ -217,7 +217,7 @@ void SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, 0);
 
 // send music
-	MSG_WriteByte (&client->message, svc_cdtrack);
+	MSG_WriteByte (&client->message, svc_cdtrack);  // CD audio removed, but must still be here
 	MSG_WriteByte (&client->message, sv.edicts->v.sounds);
 	MSG_WriteByte (&client->message, sv.edicts->v.sounds);
 

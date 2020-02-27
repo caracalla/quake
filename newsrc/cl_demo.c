@@ -190,69 +190,54 @@ void CL_Stop_f (void)
 ====================
 CL_Record_f
 
-record <demoname> <map> [cd track]
+record <demoname> <map>
 ====================
 */
-void CL_Record_f (void)
-{
-	int		c;
-	char	name[MAX_OSPATH];
-	int		track;
-
-	if (cmd_source != src_command)
-		return;
-
-	c = Cmd_Argc();
-	if (c != 2 && c != 3 && c != 4)
-	{
-		Con_Printf ("record <demoname> [<map> [cd track]]\n");
+void CL_Record_f(void) {
+	if (cmd_source != src_command) {
 		return;
 	}
 
-	if (strstr(Cmd_Argv(1), ".."))
-	{
-		Con_Printf ("Relative pathnames are not allowed.\n");
+	if (cls.state == ca_connected) {
+		Con_Printf(
+				"Cannot record - already connected to server\n"
+				"Client demo recording must be started before connecting\n");
 		return;
 	}
 
-	if (c == 2 && cls.state == ca_connected)
-	{
-		Con_Printf("Can not record - already connected to server\nClient demo recording must be started before connecting\n");
+	int c = Cmd_Argc();
+
+	if (c != 2 && c != 3) {
+		Con_Printf("record <demoname> [<map>]\n");
 		return;
 	}
 
-// write the forced cd track number, or -1
-	if (c == 4)
-	{
-		track = atoi(Cmd_Argv(3));
-		Con_Printf ("Forcing CD track to %i\n", cls.forcetrack);
-	}
-	else
-		track = -1;
-
-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
-
-//
-// start the map up
-//
-	if (c > 2)
-		Cmd_ExecuteString ( va("map %s", Cmd_Argv(2)), src_command);
-
-//
-// open the demo file
-//
-	COM_DefaultExtension (name, ".dem");
-
-	Con_Printf ("recording to %s.\n", name);
-	cls.demofile = fopen (name, "wb");
-	if (!cls.demofile)
-	{
-		Con_Printf ("ERROR: couldn't open.\n");
+	if (strstr(Cmd_Argv(1), "..")) {
+		Con_Printf("Relative pathnames are not allowed.\n");
 		return;
 	}
 
-	cls.forcetrack = track;
-	fprintf (cls.demofile, "%i\n", cls.forcetrack);
+	char name[MAX_OSPATH];
+	sprintf(name, "%s/%s", com_gamedir, Cmd_Argv(1));
+
+	// start the map up
+	if (c > 2) {
+		Cmd_ExecuteString(va("map %s", Cmd_Argv(2)), src_command);
+	}
+
+	// open the demo file
+	COM_DefaultExtension(name, ".dem");
+	Con_Printf("recording to %s.\n", name);
+	cls.demofile = fopen(name, "wb");
+
+	if (!cls.demofile) {
+		Con_Printf("ERROR: couldn't open.\n");
+		return;
+	}
+
+	// CD audio removed, but this must remain
+	cls.forcetrack = -1;
+	fprintf(cls.demofile, "%i\n", cls.forcetrack);
 
 	cls.demorecording = true;
 }
@@ -265,38 +250,30 @@ CL_PlayDemo_f
 play [demoname]
 ====================
 */
-void CL_PlayDemo_f (void)
-{
-	char	name[256];
-	int c;
-	qboolean neg = false;
-
-	if (cmd_source != src_command)
-		return;
-
-	if (Cmd_Argc() != 2)
-	{
-		Con_Printf ("play <demoname> : plays a demo\n");
+void CL_PlayDemo_f(void) {
+	if (cmd_source != src_command) {
 		return;
 	}
 
-//
-// disconnect from server
-//
+	if (Cmd_Argc() != 2) {
+		Con_Printf("play <demoname> : plays a demo\n");
+		return;
+	}
+
+	// disconnect from server
 	CL_Disconnect ();
 
-//
-// open the demo file
-//
-	strcpy (name, Cmd_Argv(1));
-	COM_DefaultExtension (name, ".dem");
+	// open the demo file
+	char name[256];
+	strcpy(name, Cmd_Argv(1));
+	COM_DefaultExtension(name, ".dem");
 
-	Con_Printf ("Playing demo from %s.\n", name);
-	COM_FOpenFile (name, &cls.demofile);
-	if (!cls.demofile)
-	{
-		Con_Printf ("ERROR: couldn't open.\n");
-		cls.demonum = -1;		// stop demo loop
+	Con_Printf("Playing demo from %s.\n", name);
+	COM_FOpenFile(name, &cls.demofile);
+
+	if (!cls.demofile) {
+		Con_Printf("ERROR: couldn't open.\n");
+		cls.demonum = -1;  // stop demo loop
 		return;
 	}
 
@@ -304,16 +281,8 @@ void CL_PlayDemo_f (void)
 	cls.state = ca_connected;
 	cls.forcetrack = 0;
 
-	while ((c = getc(cls.demofile)) != '\n')
-		if (c == '-')
-			neg = true;
-		else
-			cls.forcetrack = cls.forcetrack * 10 + (c - '0');
-
-	if (neg)
-		cls.forcetrack = -cls.forcetrack;
-// ZOID, fscanf is evil
-//	fscanf (cls.demofile, "%i\n", &cls.forcetrack);
+	// CD audio removed, but this is still necessary to read old demo files
+	while ((getc(cls.demofile)) != '\n') { /* do nothing */ }
 }
 
 /*

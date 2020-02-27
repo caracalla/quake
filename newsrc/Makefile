@@ -22,3 +22,6 @@ distclean: clean
 
 run: all
 	./$(program_NAME) -nosound -mem 16 -basedir ".." +map e1m1
+
+menu: all
+	./$(program_NAME) -nosound -mem 16 -basedir ".."

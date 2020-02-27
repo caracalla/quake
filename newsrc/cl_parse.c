@@ -62,7 +62,7 @@ char *svc_strings[] =
 	"svc_spawnstaticsound",
 	"svc_intermission",
 	"svc_finale",			// [string] music [string] text
-	"svc_cdtrack",			// [byte] track [byte] looptrack
+	"svc_cdtrack",			// [byte] track [byte] looptrack (CD audio removed)
 	"svc_sellscreen",
 	"svc_cutscene"
 };
@@ -878,24 +878,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_setpause:
-			{
-				cl.paused = MSG_ReadByte ();
-
-				if (cl.paused)
-				{
-					CDAudio_Pause ();
-#ifdef _WIN32
-					VID_HandlePause (true);
-#endif
-				}
-				else
-				{
-					CDAudio_Resume ();
-#ifdef _WIN32
-					VID_HandlePause (false);
-#endif
-				}
-			}
+			cl.paused = MSG_ReadByte ();
 			break;
 
 		case svc_signonnum:
@@ -926,12 +909,9 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_cdtrack:
+			// CD audio removed, but still expected to be here
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
-			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
-				CDAudio_Play ((byte)cls.forcetrack, true);
-			else
-				CDAudio_Play ((byte)cl.cdtrack, true);
 			break;
 
 		case svc_intermission:
