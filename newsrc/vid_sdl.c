@@ -381,11 +381,10 @@ void ProcessEvent(void) {
 	int button;
 
 	switch(event.type) {
-		case SDL_QUIT: {
+		case SDL_QUIT:
 			Con_Printf("hey thanks for playing have a good day!!!\n");
 			Sys_Quit();
 			break;
-		}
 
 		case SDL_KEYDOWN:
 			keyq[keyq_head].key = ProcessKey(event.key.keysym);

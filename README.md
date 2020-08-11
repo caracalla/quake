@@ -35,4 +35,3 @@ I've split this into two folders:
 	* graphics - DONE
 * replace QuakeC with Lua
 * remove unnecessary code
-	* CD audio support
