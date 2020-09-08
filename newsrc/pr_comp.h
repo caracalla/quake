@@ -20,23 +20,32 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // this file is shared by quake and qcc
 
-typedef int	func_t;
-typedef int	string_t;
+typedef int func_t;
+typedef int string_t;
 
-typedef enum {ev_void, ev_string, ev_float, ev_vector, ev_entity, ev_field, ev_function, ev_pointer} etype_t;
+typedef enum {
+	ev_void,
+	ev_string,
+	ev_float,
+	ev_vector,
+	ev_entity,
+	ev_field,
+	ev_function,
+	ev_pointer
+} etype_t;
 
 
-#define	OFS_NULL		0
-#define	OFS_RETURN		1
-#define	OFS_PARM0		4		// leave 3 ofs for each parm to hold vectors
-#define	OFS_PARM1		7
-#define	OFS_PARM2		10
-#define	OFS_PARM3		13
-#define	OFS_PARM4		16
-#define	OFS_PARM5		19
-#define	OFS_PARM6		22
-#define	OFS_PARM7		25
-#define	RESERVED_OFS	28
+#define OFS_NULL 0
+#define OFS_RETURN 1
+#define OFS_PARM0 4  // leave 3 ofs for each parm to hold vectors
+#define OFS_PARM1 7
+#define OFS_PARM2 10
+#define OFS_PARM3 13
+#define OFS_PARM4 16
+#define OFS_PARM5 19
+#define OFS_PARM6 22
+#define OFS_PARM7 25
+#define RESERVED_OFS 28
 
 
 enum {
@@ -118,62 +127,61 @@ enum {
 };
 
 
-typedef struct statement_s
-{
-	unsigned short	op;
-	short	a,b,c;
+typedef struct statement_s {
+	unsigned short op;
+	short a;
+	short b;
+	short c;
 } dstatement_t;
 
-typedef struct
-{
-	unsigned short	type;		// if DEF_SAVEGLOBGAL bit is set
-								// the variable needs to be saved in savegames
-	unsigned short	ofs;
-	int			s_name;
+typedef struct {
+	// if DEF_SAVEGLOBAL bit is set, the variable needs to be saved in savegames
+	unsigned short type;
+	unsigned short ofs;
+	int s_name;
 } ddef_t;
-#define	DEF_SAVEGLOBAL	(1<<15)
 
-#define	MAX_PARMS	8
+#define DEF_SAVEGLOBAL (1<<15)
 
-typedef struct
-{
-	int		first_statement;	// negative numbers are builtins
-	int		parm_start;
-	int		locals;				// total ints of parms + locals
+#define MAX_PARMS 8
 
-	int		profile;		// runtime
+typedef struct {
+	int first_statement;  // negative numbers are builtins
+	int parm_start;
+	int locals;  // total ints of parms + locals
 
-	int		s_name;
-	int		s_file;			// source file defined in
+	int profile;  // runtime
 
-	int		numparms;
-	byte	parm_size[MAX_PARMS];
+	int s_name;
+	int s_file;  // source file defined in
+
+	int numparms;
+	byte parm_size[MAX_PARMS];
 } dfunction_t;
 
 
-#define	PROG_VERSION	6
-typedef struct
-{
-	int		version;
-	int		crc;			// check of header file
+#define PROG_VERSION 6
+typedef struct {
+	int version;
+	int crc;  // check of header file
 
-	int		ofs_statements;
-	int		numstatements;	// statement 0 is an error
+	int ofs_statements;
+	int numstatements;  // statement 0 is an error
 
-	int		ofs_globaldefs;
-	int		numglobaldefs;
+	int ofs_globaldefs;
+	int numglobaldefs;
 
-	int		ofs_fielddefs;
-	int		numfielddefs;
+	int ofs_fielddefs;
+	int numfielddefs;
 
-	int		ofs_functions;
-	int		numfunctions;	// function 0 is an empty
+	int ofs_functions;
+	int numfunctions;  // function 0 is an empty
 
-	int		ofs_strings;
-	int		numstrings;		// first string is a null string
+	int ofs_strings;
+	int numstrings;  // first string is a null string
 
-	int		ofs_globals;
-	int		numglobals;
+	int ofs_globals;
+	int numglobals;
 
-	int		entityfields;
+	int entityfields;
 } dprograms_t;

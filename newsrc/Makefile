@@ -3,7 +3,7 @@ program_C_SRCS := $(wildcard *.c)
 program_OBJS := ${program_C_SRCS:.c=.o}
 program_LIBRARIES := m SDL2
 
-CFLAGS := -Wall -O2
+CFLAGS := -Wall -O2 -g
 
 LDFLAGS += $(foreach library,$(program_LIBRARIES),-l$(library))
 
@@ -25,3 +25,6 @@ run: all
 
 menu: all
 	./$(program_NAME) -nosound -mem 16 -basedir ".."
+
+debug: all
+	lldb -- $(program_NAME) -nosound -mem 16 -basedir ".." +map e1m1

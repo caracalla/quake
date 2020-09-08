@@ -323,8 +323,9 @@ sfx_t *S_PrecacheSound (char *name)
 	sfx = S_FindName (name);
 
 // cache it in
-	if (precache.value)
+	if (precache.value) {
 		S_LoadSound (sfx);
+	}
 
 	return sfx;
 }

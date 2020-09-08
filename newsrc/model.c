@@ -73,6 +73,7 @@ void *Mod_Extradata (model_t *mod)
 
 	if (!mod->cache.data)
 		Sys_Error ("Mod_Extradata: caching failed");
+
 	return mod->cache.data;
 }
 
@@ -280,10 +281,12 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 // load the file
 //
 	buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
-	if (!buf)
-	{
-		if (crash)
+
+	if (!buf) {
+		if (crash) {
 			Sys_Error ("Mod_NumForName: %s not found", mod->name);
+		}
+
 		return NULL;
 	}
 
@@ -294,11 +297,9 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 
 	loadmodel = mod;
 
-//
-// fill it in
-//
+	// fill it in
 
-// call the apropriate loader
+	// call the apropriate loader
 	mod->needload = NL_PRESENT;
 
 	switch (LittleLong(*(unsigned *)buf))
@@ -326,13 +327,10 @@ Mod_ForName
 Loads in a model for the given name
 ==================
 */
-model_t *Mod_ForName (char *name, qboolean crash)
-{
-	model_t	*mod;
+model_t* Mod_ForName(char* name, qboolean crash){
+	model_t* mod = Mod_FindName(name);
 
-	mod = Mod_FindName (name);
-
-	return Mod_LoadModel (mod, crash);
+	return Mod_LoadModel(mod, crash);
 }
 
 

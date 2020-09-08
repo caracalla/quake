@@ -942,11 +942,10 @@ COM_Parse
 Parse a token out of a string
 ==============
 */
-char *COM_Parse(char *data) {
+char* COM_Parse(char* data) {
 	int c;
-	int len;
 
-	len = 0;
+	int len = 0;
 	com_token[0] = 0;
 
 	if (!data) {
@@ -955,7 +954,7 @@ char *COM_Parse(char *data) {
 
 	// skip whitespace
 skipwhite:
-	while ( (c = *data) <= ' ') {
+	while ((c = *data) <= ' ') {
 		if (c == 0) {
 			// end of file;
 			return NULL;
@@ -1614,20 +1613,24 @@ byte *COM_LoadFile(char *path, int usehunk) {
 }
 
 byte *COM_LoadHunkFile(char *path) {
+	Sys_Printf("COM_LoadHunkFile: ");
 	return COM_LoadFile(path, 1);
 }
 
 byte *COM_LoadTempFile(char *path) {
+	Sys_Printf("COM_LoadTempFile: ");
 	return COM_LoadFile(path, 2);
 }
 
 void COM_LoadCacheFile(char *path, struct cache_user_s *cu) {
+	Sys_Printf("COM_LoadCacheFile: ");
 	loadcache = cu;
 	COM_LoadFile(path, 3);
 }
 
 // uses temp hunk if larger than bufsize
 byte *COM_LoadStackFile(char *path, void *buffer, int bufsize) {
+	Sys_Printf("COM_LoadStackFile: ");
 	byte *buf;
 
 	loadbuf = (byte *)buffer;

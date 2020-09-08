@@ -21,44 +21,56 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-dprograms_t		*progs;
-dfunction_t		*pr_functions;
-char			*pr_strings;
-ddef_t			*pr_fielddefs;
-ddef_t			*pr_globaldefs;
-dstatement_t	*pr_statements;
-globalvars_t	*pr_global_struct;
-float			*pr_globals;			// same as pr_global_struct
-int				pr_edict_size;	// in bytes
+dprograms_t* progs;
+dfunction_t* pr_functions;
+char* pr_strings;  // all strings in the program, starting with a null, and separated by nulls
+ddef_t* pr_fielddefs;
+ddef_t* pr_globaldefs;
+dstatement_t* pr_statements;
+globalvars_t* pr_global_struct;
+float* pr_globals;  // same as pr_global_struct
+int pr_edict_size;  // in bytes
 
-unsigned short		pr_crc;
+unsigned short pr_crc;
 
-int		type_size[8] = {1,sizeof(string_t)/4,1,3,1,1,sizeof(func_t)/4,sizeof(void *)/4};
+int type_size[8] = {
+	1,                    // void
+	sizeof(string_t) / 4, // string
+	1,                    // float
+	3,                    // vector
+	1,                    // entity
+	1,                    // field
+	sizeof(func_t) / 4,   // function
+	sizeof(void*) / 4     // pointer
+};
 
-ddef_t *ED_FieldAtOfs (int ofs);
-qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s);
+ddef_t* ED_FieldAtOfs(int ofs);
+qboolean ED_ParseEpair(void* base, ddef_t* key, char* s);
 
-cvar_t	nomonsters = {"nomonsters", "0"};
-cvar_t	gamecfg = {"gamecfg", "0"};
-cvar_t	scratch1 = {"scratch1", "0"};
-cvar_t	scratch2 = {"scratch2", "0"};
-cvar_t	scratch3 = {"scratch3", "0"};
-cvar_t	scratch4 = {"scratch4", "0"};
-cvar_t	savedgamecfg = {"savedgamecfg", "0", true};
-cvar_t	saved1 = {"saved1", "0", true};
-cvar_t	saved2 = {"saved2", "0", true};
-cvar_t	saved3 = {"saved3", "0", true};
-cvar_t	saved4 = {"saved4", "0", true};
+cvar_t nomonsters = {"nomonsters", "0"};
+cvar_t gamecfg = {"gamecfg", "0"};
+cvar_t scratch1 = {"scratch1", "0"};
+cvar_t scratch2 = {"scratch2", "0"};
+cvar_t scratch3 = {"scratch3", "0"};
+cvar_t scratch4 = {"scratch4", "0"};
+cvar_t savedgamecfg = {"savedgamecfg", "0", true};
+cvar_t saved1 = {"saved1", "0", true};
+cvar_t saved2 = {"saved2", "0", true};
+cvar_t saved3 = {"saved3", "0", true};
+cvar_t saved4 = {"saved4", "0", true};
 
-#define	MAX_FIELD_LEN	64
-#define GEFV_CACHESIZE	2
+#define MAX_FIELD_LEN 64
+#define GEFV_CACHESIZE 2
 
 typedef struct {
-	ddef_t	*pcache;
-	char	field[MAX_FIELD_LEN];
+	ddef_t* pcache;
+	char field[MAX_FIELD_LEN];
 } gefv_cache;
 
-static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
+static gefv_cache gefvCache[GEFV_CACHESIZE] = {
+	{NULL, ""},
+	{NULL, ""}
+};
 
 /*
 =================
@@ -67,9 +79,8 @@ ED_ClearEdict
 Sets everything to NULL
 =================
 */
-void ED_ClearEdict (edict_t *e)
-{
-	memset (&e->v, 0, progs->entityfields * 4);
+void ED_ClearEdict(edict_t* e) {
+	memset(&e->v, 0, progs->entityfields * 4);
 	e->free = false;
 }
 
@@ -145,17 +156,17 @@ void ED_Free (edict_t *ed)
 ED_GlobalAtOfs
 ============
 */
-ddef_t *ED_GlobalAtOfs (int ofs)
-{
-	ddef_t		*def;
-	int			i;
+ddef_t* ED_GlobalAtOfs(int ofs) {
+	ddef_t* def;
 
-	for (i=0 ; i<progs->numglobaldefs ; i++)
-	{
+	for (int i = 0; i < progs->numglobaldefs; i++) {
 		def = &pr_globaldefs[i];
-		if (def->ofs == ofs)
+
+		if (def->ofs == ofs) {
 			return def;
+		}
 	}
+
 	return NULL;
 }
 
@@ -277,45 +288,51 @@ PR_ValueString
 Returns a string describing *data in a type specific manner
 =============
 */
-char *PR_ValueString (etype_t type, eval_t *val)
-{
-	static char	line[256];
-	ddef_t		*def;
-	dfunction_t	*f;
+char* PR_ValueString(etype_t type, eval_t* val) {
+	static char line[256];
+	ddef_t* def;
+	dfunction_t* function;
 
 	type &= ~DEF_SAVEGLOBAL;
 
-	switch (type)
-	{
-	case ev_string:
-		sprintf (line, "%s", pr_strings + val->string);
-		break;
-	case ev_entity:
-		sprintf (line, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
-		break;
-	case ev_function:
-		f = pr_functions + val->function;
-		sprintf (line, "%s()", pr_strings + f->s_name);
-		break;
-	case ev_field:
-		def = ED_FieldAtOfs ( val->_int );
-		sprintf (line, ".%s", pr_strings + def->s_name);
-		break;
-	case ev_void:
-		sprintf (line, "void");
-		break;
-	case ev_float:
-		sprintf (line, "%5.1f", val->_float);
-		break;
-	case ev_vector:
-		sprintf (line, "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
-		break;
-	case ev_pointer:
-		sprintf (line, "pointer");
-		break;
-	default:
-		sprintf (line, "bad type %i", type);
-		break;
+	switch (type) {
+		case ev_string:
+			sprintf(line, "%s", pr_strings + val->string);
+			break;
+
+		case ev_entity:
+			sprintf(line, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
+			break;
+
+		case ev_function:
+			function = pr_functions + val->function;
+			sprintf(line, "%s()", pr_strings + function->s_name);
+			break;
+
+		case ev_field:
+			def = ED_FieldAtOfs ( val->_int );
+			sprintf(line, ".%s", pr_strings + def->s_name);
+			break;
+
+		case ev_void:
+			sprintf(line, "void");
+			break;
+
+		case ev_float:
+			sprintf(line, "%5.1f", val->_float);
+			break;
+
+		case ev_vector:
+			sprintf(line, "'%5.1f %5.1f %5.1f'", val->vector[0], val->vector[1], val->vector[2]);
+			break;
+
+		case ev_pointer:
+			sprintf(line, "pointer");
+			break;
+
+		default:
+			sprintf(line, "bad type %i", type);
+			break;
 	}
 
 	return line;
@@ -375,31 +392,28 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 PR_GlobalString
 
 Returns a string with a description and the contents of a global,
-padded to 20 field width
+padded to 30 field width
 ============
 */
-char *PR_GlobalString (int ofs)
-{
-	char	*s;
-	int		i;
-	ddef_t	*def;
-	void	*val;
-	static char	line[128];
+char* PR_GlobalString(int ofs) {
+	char* value_string;
+	static char line[128];
 
-	val = (void *)&pr_globals[ofs];
-	def = ED_GlobalAtOfs(ofs);
-	if (!def)
-		sprintf (line,"%i(?!?)", ofs);
-	else
-	{
-		s = PR_ValueString (def->type, val);
-		sprintf (line,"%i(%s)%s", ofs, pr_strings + def->s_name, s);
+	void* val = (void*)&pr_globals[ofs];
+	ddef_t* def = ED_GlobalAtOfs(ofs);
+
+	if (!def) {
+		sprintf(line,"%i (?!?)", ofs);
+	} else {
+		value_string = PR_ValueString(def->type, val);
+		sprintf(line,"%i (%s)%s", ofs, pr_strings + def->s_name, value_string);
 	}
 
-	i = strlen(line);
-	for ( ; i<20 ; i++)
-		strcat (line," ");
-	strcat (line," ");
+	for (int i = strlen(line); i < 30; i++) {
+		strcat(line, " ");
+	}
+
+	strcat(line, " ");
 
 	return line;
 }
@@ -902,78 +916,71 @@ Used for both fresh maps and savegame loads.  A fresh map would also need
 to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 ================
 */
-void ED_LoadFromFile (char *data)
-{
-	edict_t		*ent;
-	int			inhibit;
-	dfunction_t	*func;
 
-	ent = NULL;
-	inhibit = 0;
+void ED_LoadFromFile(char* data) {
+	edict_t* ent = NULL;
+	int inhibit = 0;
 	pr_global_struct->time = sv.time;
 
-// parse ents
-	while (1)
-	{
-// parse the opening brace
-		data = COM_Parse (data);
-		if (!data)
+	// parse ents
+	while (1) {
+		// parse the opening brace
+		data = COM_Parse(data);
+
+		if (!data) {
 			break;
-		if (com_token[0] != '{')
-			Sys_Error ("ED_LoadFromFile: found %s when expecting {",com_token);
+		}
 
-		if (!ent)
+		if (com_token[0] != '{') {
+			Sys_Error("ED_LoadFromFile: found %s when expecting {", com_token);
+		}
+
+		if (!ent) {
 			ent = EDICT_NUM(0);
-		else
-			ent = ED_Alloc ();
-		data = ED_ParseEdict (data, ent);
+		} else {
+			ent = ED_Alloc();
+		}
 
-// remove things from different skill levels or deathmatch
-		if (deathmatch.value)
-		{
-			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
-			{
-				ED_Free (ent);
+		data = ED_ParseEdict(data, ent);
+
+		// remove things from different skill levels or deathmatch
+		if (deathmatch.value) {
+			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH)) {
+				ED_Free(ent);
 				inhibit++;
 				continue;
 			}
-		}
-		else if ((current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY))
+		} else if ((current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY))
 				|| (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
-				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
-		{
-			ED_Free (ent);
+				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD))) {
+			ED_Free(ent);
 			inhibit++;
 			continue;
 		}
 
-//
-// immediately call spawn function
-//
-		if (!ent->v.classname)
-		{
-			Con_Printf ("No classname for:\n");
-			ED_Print (ent);
-			ED_Free (ent);
+		// immediately call spawn function
+		if (!ent->v.classname) {
+			Con_Printf("No classname for:\n");
+			ED_Print(ent);
+			ED_Free(ent);
 			continue;
 		}
 
-	// look for the spawn function
-		func = ED_FindFunction ( pr_strings + ent->v.classname );
+		// look for the spawn function
+		dfunction_t* function = ED_FindFunction(pr_strings + ent->v.classname);
 
-		if (!func)
-		{
-			Con_Printf ("No spawn function for:\n");
-			ED_Print (ent);
-			ED_Free (ent);
+		if (!function) {
+			Con_Printf("No spawn function for:\n");
+			ED_Print(ent);
+			ED_Free(ent);
 			continue;
 		}
 
 		pr_global_struct->self = EDICT_TO_PROG(ent);
-		PR_ExecuteProgram (func - pr_functions);
+		PR_ExecuteProgram(function - pr_functions);
 	}
 
-	Con_DPrintf ("%i entities inhibited\n", inhibit);
+	Con_DPrintf("%i entities inhibited\n", inhibit);
 }
 
 
