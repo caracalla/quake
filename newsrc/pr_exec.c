@@ -357,7 +357,7 @@ PR_ExecuteProgram
 ====================
 */
 void PR_ExecuteProgram(func_t func_index) {
-	dfunction_t* newf;
+	dfunction_t* new_function;
 	int i;
 	edict_t* ed;
 	eval_t* ptr;
@@ -397,8 +397,6 @@ void PR_ExecuteProgram(func_t func_index) {
 		if (pr_trace) {
 			PR_PrintStatement(statement);
 		}
-
-		int g = 20;
 
 		switch (statement->op) {
 			case OP_ADD_F:
@@ -499,16 +497,14 @@ void PR_ExecuteProgram(func_t func_index) {
 							(a->vector[2] == b->vector[2]);
 				break;
 			case OP_EQ_S:
-				// debugging crap for a weird invalid string index crash
-				printf("about to do EQ_S\n");
-				printf("pr_strings is: %s\n", pr_strings + 1);
-				printf("a->string is: %d, its string value is: %s\n", a->string, pr_strings + a->string);
-				printf("b->string is: %s, its string value is: %s\n", b->string, pr_strings + b->string);
-				// printf("hi\n");
-
+				// there's a bug here, where the offset stored in a->string is invalid due
+				// overflow, for example when the world model is set in SV_SpawnServer
+				// line ~1160:
+				//   ent->v.model = sv.worldmodel->name - pr_strings;
+				// ent->v.model (and thus a->string) should be negative, but it can be a
+				// positive value, causing a segfault when attempting to read
+				// pr_strings + a->string
 				c->_float = !strcmp(pr_strings + a->string, pr_strings + b->string);
-
-				printf("done with EQ_S\n");
 				break;
 			case OP_EQ_E:
 				c->_float = a->_int == b->_int;
@@ -634,11 +630,11 @@ void PR_ExecuteProgram(func_t func_index) {
 					PR_RunError("NULL function");
 				}
 
-				newf = &pr_functions[a->function];
+				new_function = &pr_functions[a->function];
 
-				if (newf->first_statement < 0) {
+				if (new_function->first_statement < 0) {
 					// negative statements are built in functions
-					i = -newf->first_statement;
+					i = -new_function->first_statement;
 
 					if (i >= pr_numbuiltins) {
 						PR_RunError("Bad builtin call number");
@@ -648,7 +644,7 @@ void PR_ExecuteProgram(func_t func_index) {
 					break;
 				}
 
-				statement_counter = PR_EnterFunction(newf);
+				statement_counter = PR_EnterFunction(new_function);
 				break;
 
 			case OP_DONE:

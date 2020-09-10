@@ -403,10 +403,10 @@ char* PR_GlobalString(int ofs) {
 	ddef_t* def = ED_GlobalAtOfs(ofs);
 
 	if (!def) {
-		sprintf(line,"%i (?!?)", ofs);
+		sprintf(line, "%i (?!?)", ofs);
 	} else {
 		value_string = PR_ValueString(def->type, val);
-		sprintf(line,"%i (%s)%s", ofs, pr_strings + def->s_name, value_string);
+		sprintf(line, "%i (%s)%s", ofs, pr_strings + def->s_name, value_string);
 	}
 
 	for (int i = strlen(line); i < 30; i++) {
@@ -1000,6 +1000,7 @@ void PR_LoadProgs (void)
 	CRC_Init (&pr_crc);
 
 	progs = (dprograms_t *)COM_LoadHunkFile ("progs.dat");
+
 	if (!progs)
 		Sys_Error ("PR_LoadProgs: couldn't load progs.dat");
 	Con_DPrintf ("Programs occupy %iK.\n", com_filesize/1024);
