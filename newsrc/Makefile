@@ -20,6 +20,7 @@ clean:
 
 distclean: clean
 
+# arguments prefixed with a plus sign are Quake commands
 run: all
 	./$(program_NAME) -nosound -mem 16 -basedir ".." +map e1m1
 

@@ -2,9 +2,9 @@
 
 Adapted from https://github.com/mwh204/id-quake.x11.  My personal notes are in notes.md.
 
-I've split this into two folders:
+I've split this into several folders:
 * src - the original, Linux-only source with minor modifications
-* newsrc - ported to SDL and actively under development
+* newsrc - ported to SDL and actively under development but mostly maintaining Quake compatibility
 
 ## Installation
 
@@ -33,5 +33,8 @@ I've split this into two folders:
 	* input - WIP
 	* sound
 	* graphics - DONE
-* replace QuakeC with Lua
 * remove unnecessary code
+
+## Long term goals (in a new form)
+* Replace QuakeC with Lua
+* Transition codebase to C++ (use namespaces, classes as simple structs with methods)

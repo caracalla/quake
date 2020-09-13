@@ -52,6 +52,9 @@ typedef struct edict_s {
 
 extern dprograms_t* progs;
 extern dfunction_t* pr_functions;
+
+// all strings in the program, separated by nulls
+// pr_strings[0] is a null
 extern char* pr_strings;
 extern ddef_t* pr_globaldefs;
 extern ddef_t* pr_fielddefs;
@@ -85,9 +88,10 @@ void ED_ParseGlobals(char* data);
 
 void ED_LoadFromFile(char* data);
 
-//define EDICT_NUM(n) ((edict_t *)(sv.edicts+ (n)*pr_edict_size))
-//define NUM_FOR_EDICT(e) (((byte *)(e) - sv.edicts)/pr_edict_size)
+//define EDICT_NUM(n) ((edict_t*)(sv.edicts + (n) * pr_edict_size))
+//define NUM_FOR_EDICT(e) (((byte*)(e) - sv.edicts) / pr_edict_size)
 
+// the function versions of the above macros add error handling
 edict_t* EDICT_NUM(int n);
 int NUM_FOR_EDICT(edict_t* e);
 

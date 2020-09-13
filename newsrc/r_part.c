@@ -113,53 +113,44 @@ R_EntityParticles
 ===============
 */
 
-#define NUMVERTEXNORMALS	162
-extern	float	r_avertexnormals[NUMVERTEXNORMALS][3];
-vec3_t	avelocities[NUMVERTEXNORMALS];
-float	beamlength = 16;
-vec3_t	avelocity = {23, 7, 3};
-float	partstep = 0.01;
-float	timescale = 0.01;
+#define NUMVERTEXNORMALS 162
+extern float r_avertexnormals[NUMVERTEXNORMALS][3];
+vec3_t avelocities[NUMVERTEXNORMALS];
+float beamlength = 16;
+vec3_t avelocity = {23, 7, 3};
+float partstep = 0.01;
+float timescale = 0.01;
 
-void R_EntityParticles (entity_t *ent)
-{
-	int			count;
-	int			i;
-	particle_t	*p;
-	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
-	vec3_t		forward;
-	float		dist;
+void R_EntityParticles(entity_t* ent) {
+	if (!avelocities[0][0]) {
+		for (int i = 0; i < NUMVERTEXNORMALS * 3; i++) {
+			avelocities[0][i] = (rand() & 255) * 0.01;
+		}
+	}
 
-	dist = 64;
-	count = 50;
+	vec3_t forward;
+	float dist = 64;
 
-if (!avelocities[0][0])
-{
-for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-avelocities[0][i] = (rand()&255) * 0.01;
-}
-
-
-	for (i=0 ; i<NUMVERTEXNORMALS ; i++)
-	{
-		angle = cl.time * avelocities[i][0];
-		sy = sin(angle);
-		cy = cos(angle);
+	for (int i = 0; i < NUMVERTEXNORMALS; i++) {
+		float angle = cl.time * avelocities[i][0];
+		float sy = sin(angle);
+		float cy = cos(angle);
 		angle = cl.time * avelocities[i][1];
-		sp = sin(angle);
-		cp = cos(angle);
-		angle = cl.time * avelocities[i][2];
-		sr = sin(angle);
-		cr = cos(angle);
+		float sp = sin(angle);
+		float cp = cos(angle);
+		// angle = cl.time * avelocities[i][2];
+		// float sr = sin(angle);
+		// float cr = cos(angle);
 
-		forward[0] = cp*cy;
-		forward[1] = cp*sy;
+		forward[0] = cp * cy;
+		forward[1] = cp * sy;
 		forward[2] = -sp;
 
-		if (!free_particles)
+		if (!free_particles) {
 			return;
-		p = free_particles;
+		}
+
+		particle_t* p = free_particles;
 		free_particles = p->next;
 		p->next = active_particles;
 		active_particles = p;
@@ -168,9 +159,12 @@ avelocities[0][i] = (rand()&255) * 0.01;
 		p->color = 0x6f;
 		p->type = pt_explode;
 
-		p->org[0] = ent->origin[0] + r_avertexnormals[i][0]*dist + forward[0]*beamlength;
-		p->org[1] = ent->origin[1] + r_avertexnormals[i][1]*dist + forward[1]*beamlength;
-		p->org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*beamlength;
+		p->org[0] =
+				ent->origin[0] + r_avertexnormals[i][0] * dist + forward[0] * beamlength;
+		p->org[1] =
+				ent->origin[1] + r_avertexnormals[i][1] * dist + forward[1] * beamlength;
+		p->org[2] =
+				ent->origin[2] + r_avertexnormals[i][2] * dist + forward[2] * beamlength;
 	}
 }
 

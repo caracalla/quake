@@ -273,7 +273,7 @@ void Sys_HighFPPrecision(void) {}
 void Sys_LowFPPrecision(void) {}
 #endif
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 	double elapsed_time;
 	double oldtime;
 	double newtime;

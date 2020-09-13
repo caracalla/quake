@@ -134,14 +134,15 @@ typedef struct statement_s {
 	short c;
 } dstatement_t;
 
+
+#define DEF_SAVEGLOBAL (1 << 15)  // 1000000000000000
+
 typedef struct {
 	// if DEF_SAVEGLOBAL bit is set, the variable needs to be saved in savegames
 	unsigned short type;
 	unsigned short ofs;
 	int s_name;
 } ddef_t;
-
-#define DEF_SAVEGLOBAL (1<<15)
 
 #define MAX_PARMS 8
 

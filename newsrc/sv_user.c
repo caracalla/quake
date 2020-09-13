@@ -21,27 +21,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-edict_t	*sv_player;
+edict_t* sv_player;
 
-extern	cvar_t	sv_friction;
-cvar_t	sv_edgefriction = {"edgefriction", "2"};
-extern	cvar_t	sv_stopspeed;
+extern cvar_t sv_friction;
+cvar_t sv_edgefriction = {"edgefriction", "2"};
+extern cvar_t sv_stopspeed;
 
-static	vec3_t		forward, right, up;
+static vec3_t forward, right, up;
 
-vec3_t	wishdir;
-float	wishspeed;
+vec3_t wishdir;
+float wishspeed;
 
 // world
-float	*angles;
-float	*origin;
-float	*velocity;
+float* angles;
+float* origin;
+float* velocity;
 
-qboolean	onground;
+qboolean onground;
 
-usercmd_t	cmd;
+usercmd_t cmd;
 
-cvar_t	sv_idealpitchscale = {"sv_idealpitchscale","0.8"};
+cvar_t sv_idealpitchscale = {"sv_idealpitchscale","0.8"};
 
 
 /*
@@ -49,66 +49,70 @@ cvar_t	sv_idealpitchscale = {"sv_idealpitchscale","0.8"};
 SV_SetIdealPitch
 ===============
 */
-#define	MAX_FORWARD	6
-void SV_SetIdealPitch (void)
-{
-	float	angleval, sinval, cosval;
-	trace_t	tr;
-	vec3_t	top, bottom;
-	float	z[MAX_FORWARD];
-	int		i, j;
-	int		step, dir, steps;
+#define MAX_FORWARD 6
 
-	if (!((int)sv_player->v.flags & FL_ONGROUND))
+void SV_SetIdealPitch(void) {
+	if (!((int)sv_player->v.flags & FL_ONGROUND)) {
 		return;
+	}
 
-	angleval = sv_player->v.angles[YAW] * M_PI*2 / 360;
-	sinval = sin(angleval);
-	cosval = cos(angleval);
+	float angleval = sv_player->v.angles[YAW] * M_PI * 2 / 360;
+	float sinval = sin(angleval);
+	float cosval = cos(angleval);
 
-	for (i=0 ; i<MAX_FORWARD ; i++)
-	{
-		top[0] = sv_player->v.origin[0] + cosval*(i+3)*12;
-		top[1] = sv_player->v.origin[1] + sinval*(i+3)*12;
+	vec3_t top;
+	vec3_t bottom;
+
+	float z[MAX_FORWARD];
+	int i;
+
+	for (i = 0; i < MAX_FORWARD; i++) {
+		top[0] = sv_player->v.origin[0] + cosval * (i + 3) * 12;
+		top[1] = sv_player->v.origin[1] + sinval * (i + 3) * 12;
 		top[2] = sv_player->v.origin[2] + sv_player->v.view_ofs[2];
 
 		bottom[0] = top[0];
 		bottom[1] = top[1];
 		bottom[2] = top[2] - 160;
 
-		tr = SV_Move (top, vec3_origin, vec3_origin, bottom, 1, sv_player);
-		if (tr.allsolid)
+		trace_t trace = SV_Move(top, vec3_origin, vec3_origin, bottom, 1, sv_player);
+		if (trace.allsolid)
 			return;	// looking at a wall, leave ideal the way is was
 
-		if (tr.fraction == 1)
+		if (trace.fraction == 1)
 			return;	// near a dropoff
 
-		z[i] = top[2] + tr.fraction*(bottom[2]-top[2]);
+		z[i] = top[2] + trace.fraction * (bottom[2] - top[2]);
 	}
 
-	dir = 0;
-	steps = 0;
-	for (j=1 ; j<i ; j++)
-	{
-		step = z[j] - z[j-1];
-		if (step > -ON_EPSILON && step < ON_EPSILON)
-			continue;
+	int dir = 0;
+	int steps = 0;
 
-		if (dir && ( step-dir > ON_EPSILON || step-dir < -ON_EPSILON ) )
-			return;		// mixed changes
+	for (int j = 1; j < i; j++) {
+		int step = z[j] - z[j - 1];
+
+		if (step > -ON_EPSILON && step < ON_EPSILON) {
+			continue;
+		}
+
+		if (dir && (step - dir > ON_EPSILON || step - dir < -ON_EPSILON )) {
+			// mixed changes
+			return;
+		}
 
 		steps++;
 		dir = step;
 	}
 
-	if (!dir)
-	{
+	if (!dir) {
 		sv_player->v.idealpitch = 0;
 		return;
 	}
 
-	if (steps < 2)
+	if (steps < 2) {
 		return;
+	}
+
 	sv_player->v.idealpitch = -dir * sv_idealpitchscale.value;
 }
 
@@ -119,44 +123,47 @@ SV_UserFriction
 
 ==================
 */
-void SV_UserFriction (void)
-{
-	float	*vel;
-	float	speed, newspeed, control;
-	vec3_t	start, stop;
-	float	friction;
-	trace_t	trace;
+void SV_UserFriction(void) {
+	float* vel = velocity;  // is there any reason for this variable?
+	float	speed = sqrt(vel[0] * vel[0] + vel[1] * vel[1]);
 
-	vel = velocity;
-
-	speed = sqrt(vel[0]*vel[0] +vel[1]*vel[1]);
-	if (!speed)
+	if (!speed) {
 		return;
+	}
 
-// if the leading edge is over a dropoff, increase friction
+	// if the leading edge is over a dropoff, increase friction
+	vec3_t start;
+	vec3_t stop;
+
 	start[0] = stop[0] = origin[0] + vel[0]/speed*16;
 	start[1] = stop[1] = origin[1] + vel[1]/speed*16;
 	start[2] = origin[2] + sv_player->v.mins[2];
 	stop[2] = start[2] - 34;
 
-	trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, sv_player);
+	trace_t trace = SV_Move(
+			start, vec3_origin, vec3_origin, stop, true, sv_player);
 
-	if (trace.fraction == 1.0)
-		friction = sv_friction.value*sv_edgefriction.value;
-	else
+	float friction;
+
+	if (trace.fraction == 1.0) {
+		friction = sv_friction.value * sv_edgefriction.value;
+	} else {
 		friction = sv_friction.value;
+	}
 
-// apply friction
-	control = speed < sv_stopspeed.value ? sv_stopspeed.value : speed;
-	newspeed = speed - host_frametime*control*friction;
+	// apply friction
+	float control = speed < sv_stopspeed.value ? sv_stopspeed.value : speed;
+	float new_speed = speed - host_frametime*control*friction;
 
-	if (newspeed < 0)
-		newspeed = 0;
-	newspeed /= speed;
+	if (new_speed < 0) {
+		new_speed = 0;
+	}
 
-	vel[0] = vel[0] * newspeed;
-	vel[1] = vel[1] * newspeed;
-	vel[2] = vel[2] * newspeed;
+	new_speed /= speed;
+
+	vel[0] = vel[0] * new_speed;
+	vel[1] = vel[1] * new_speed;
+	vel[2] = vel[2] * new_speed;
 }
 
 /*
@@ -164,78 +171,90 @@ void SV_UserFriction (void)
 SV_Accelerate
 ==============
 */
-cvar_t	sv_maxspeed = {"sv_maxspeed", "320", false, true};
-cvar_t	sv_accelerate = {"sv_accelerate", "10"};
+cvar_t sv_maxspeed = {"sv_maxspeed", "320", false, true};
+cvar_t sv_accelerate = {"sv_accelerate", "10"};
+
 #if 0
-void SV_Accelerate (vec3_t wishvel)
-{
-	int			i;
-	float		addspeed, accelspeed;
-	vec3_t		pushvec;
-
-	if (wishspeed == 0)
+void SV_Accelerate(vec3_t wishvel) {
+	if (wishspeed == 0) {
 		return;
+	}
 
-	VectorSubtract (wishvel, velocity, pushvec);
-	addspeed = VectorNormalize (pushvec);
+	vece_t pushvec;
 
-	accelspeed = sv_accelerate.value*host_frametime*addspeed;
-	if (accelspeed > addspeed)
-		accelspeed = addspeed;
+	VectorSubtract(wishvel, velocity, pushvec);
+	float add_speed = VectorNormalize(pushvec);
 
-	for (i=0 ; i<3 ; i++)
-		velocity[i] += accelspeed*pushvec[i];
+	float accel_speed = sv_accelerate.value * host_frametime * add_speed;
+
+	if (accel_speed > add_speed) {
+		accel_speed = add_speed;
+	}
+
+	for (int i=0 ; i<3 ; i++) {
+		velocity[i] += accel_speed*pushvec[i];
+	}
 }
 #endif
-void SV_Accelerate (void)
-{
-	int			i;
-	float		addspeed, accelspeed, currentspeed;
 
-	currentspeed = DotProduct (velocity, wishdir);
-	addspeed = wishspeed - currentspeed;
-	if (addspeed <= 0)
+void SV_Accelerate(void) {
+	float current_speed = DotProduct(velocity, wishdir);
+	float add_speed = wishspeed - current_speed;
+
+	if (add_speed <= 0) {
 		return;
-	accelspeed = sv_accelerate.value*host_frametime*wishspeed;
-	if (accelspeed > addspeed)
-		accelspeed = addspeed;
+	}
 
-	for (i=0 ; i<3 ; i++)
-		velocity[i] += accelspeed*wishdir[i];
+	float accel_speed = sv_accelerate.value * host_frametime * wishspeed;
+
+	if (accel_speed > add_speed) {
+		accel_speed = add_speed;
+	}
+
+	for (int i = 0; i < 3; i++) {
+		velocity[i] += accel_speed * wishdir[i];
+	}
 }
 
-void SV_AirAccelerate (vec3_t wishveloc)
-{
-	int			i;
-	float		addspeed, wishspd, accelspeed, currentspeed;
+#define MAX_WISH_SPEED 30
 
-	wishspd = VectorNormalize (wishveloc);
-	if (wishspd > 30)
-		wishspd = 30;
-	currentspeed = DotProduct (velocity, wishveloc);
-	addspeed = wishspd - currentspeed;
-	if (addspeed <= 0)
+void SV_AirAccelerate(vec3_t wish_veloc) {
+	float wish_speed = VectorNormalize(wish_veloc);
+
+	if (wish_speed > MAX_WISH_SPEED) {
+		wish_speed = MAX_WISH_SPEED;
+	}
+
+	float current_speed = DotProduct (velocity, wish_veloc);
+	float add_speed = wish_speed - current_speed;
+
+	if (add_speed <= 0) {
 		return;
-//	accelspeed = sv_accelerate.value * host_frametime;
-	accelspeed = sv_accelerate.value*wishspeed * host_frametime;
-	if (accelspeed > addspeed)
-		accelspeed = addspeed;
+	}
 
-	for (i=0 ; i<3 ; i++)
-		velocity[i] += accelspeed*wishveloc[i];
+	// float accel_speed = sv_accelerate.value * host_frametime;
+	float accel_speed = sv_accelerate.value * wishspeed * host_frametime;
+
+	if (accel_speed > add_speed) {
+		accel_speed = add_speed;
+	}
+
+	for (int i = 0; i < 3 ; i++) {
+		velocity[i] += accel_speed * wish_veloc[i];
+	}
 }
 
 
-void DropPunchAngle (void)
-{
-	float	len;
+void DropPunchAngle(void) {
+	float len = VectorNormalize(sv_player->v.punchangle);
 
-	len = VectorNormalize (sv_player->v.punchangle);
+	len -= 10 * host_frametime;
 
-	len -= 10*host_frametime;
-	if (len < 0)
+	if (len < 0) {
 		len = 0;
-	VectorScale (sv_player->v.punchangle, len, sv_player->v.punchangle);
+	}
+
+	VectorScale(sv_player->v.punchangle, len, sv_player->v.punchangle);
 }
 
 /*
@@ -244,74 +263,77 @@ SV_WaterMove
 
 ===================
 */
-void SV_WaterMove (void)
-{
-	int		i;
-	vec3_t	wishvel;
-	float	speed, newspeed, wishspeed, addspeed, accelspeed;
+void SV_WaterMove(void) {
+	// user intentions
+	AngleVectors(sv_player->v.v_angle, forward, right, up);
 
-//
-// user intentions
-//
-	AngleVectors (sv_player->v.v_angle, forward, right, up);
+	vec3_t wishvel;
 
-	for (i=0 ; i<3 ; i++)
-		wishvel[i] = forward[i]*cmd.forwardmove + right[i]*cmd.sidemove;
+	for (int i = 0; i < 3 ; i++) {
+		wishvel[i] = forward[i] * cmd.forwardmove + right[i] * cmd.sidemove;
+	}
 
-	if (!cmd.forwardmove && !cmd.sidemove && !cmd.upmove)
-		wishvel[2] -= 60;		// drift towards bottom
-	else
+	if (!cmd.forwardmove && !cmd.sidemove && !cmd.upmove) {
+		// drift towards bottom
+		wishvel[2] -= 60;
+	} else {
 		wishvel[2] += cmd.upmove;
+	}
 
-	wishspeed = Length(wishvel);
-	if (wishspeed > sv_maxspeed.value)
-	{
-		VectorScale (wishvel, sv_maxspeed.value/wishspeed, wishvel);
+	float wish_speed = Length(wishvel);
+
+	if (wish_speed > sv_maxspeed.value) {
+		VectorScale(wishvel, sv_maxspeed.value / wish_speed, wishvel);
 		wishspeed = sv_maxspeed.value;
 	}
-	wishspeed *= 0.7;
 
-//
-// water friction
-//
-	speed = Length (velocity);
-	if (speed)
-	{
-		newspeed = speed - host_frametime * speed * sv_friction.value;
-		if (newspeed < 0)
-			newspeed = 0;
-		VectorScale (velocity, newspeed/speed, velocity);
+	wish_speed *= 0.7;
+
+	// water friction
+	float speed = Length(velocity);
+	float new_speed;
+
+	if (speed) {
+		new_speed = speed - host_frametime * speed * sv_friction.value;
+
+		if (new_speed < 0) {
+			new_speed = 0;
+		}
+
+		VectorScale (velocity, new_speed / speed, velocity);
+	} else {
+		new_speed = 0;
 	}
-	else
-		newspeed = 0;
 
-//
-// water acceleration
-//
-	if (!wishspeed)
+	// water acceleration
+	if (!wish_speed) {
 		return;
+	}
 
-	addspeed = wishspeed - newspeed;
-	if (addspeed <= 0)
+	float add_speed = wish_speed - new_speed;
+
+	if (add_speed <= 0) {
 		return;
+	}
 
-	VectorNormalize (wishvel);
-	accelspeed = sv_accelerate.value * wishspeed * host_frametime;
-	if (accelspeed > addspeed)
-		accelspeed = addspeed;
+	VectorNormalize(wishvel);
+	float accel_speed = sv_accelerate.value * wish_speed * host_frametime;
 
-	for (i=0 ; i<3 ; i++)
-		velocity[i] += accelspeed * wishvel[i];
+	if (accel_speed > add_speed) {
+		accel_speed = add_speed;
+	}
+
+	for (int i = 0; i < 3; i++) {
+		velocity[i] += accel_speed * wishvel[i];
+	}
 }
 
-void SV_WaterJump (void)
-{
-	if (sv.time > sv_player->v.teleport_time
-	|| !sv_player->v.waterlevel)
-	{
+void SV_WaterJump(void) {
+	if (sv.time > sv_player->v.teleport_time || !sv_player->v.waterlevel) {
 		sv_player->v.flags = (int)sv_player->v.flags & ~FL_WATERJUMP;
 		sv_player->v.teleport_time = 0;
 	}
+
 	sv_player->v.velocity[0] = sv_player->v.movedir[0];
 	sv_player->v.velocity[1] = sv_player->v.movedir[1];
 }
@@ -323,49 +345,46 @@ SV_AirMove
 
 ===================
 */
-void SV_AirMove (void)
-{
-	int			i;
-	vec3_t		wishvel;
-	float		fmove, smove;
+void SV_AirMove(void) {
+	AngleVectors(sv_player->v.angles, forward, right, up);
 
-	AngleVectors (sv_player->v.angles, forward, right, up);
+	float fmove = cmd.forwardmove;
+	float smove = cmd.sidemove;
 
-	fmove = cmd.forwardmove;
-	smove = cmd.sidemove;
-
-// hack to not let you back into teleporter
-	if (sv.time < sv_player->v.teleport_time && fmove < 0)
+	// hack to not let you back into teleporter
+	if (sv.time < sv_player->v.teleport_time && fmove < 0) {
 		fmove = 0;
+	}
 
-	for (i=0 ; i<3 ; i++)
-		wishvel[i] = forward[i]*fmove + right[i]*smove;
+	vec3_t wishvel;
 
-	if ( (int)sv_player->v.movetype != MOVETYPE_WALK)
+	for (int i = 0; i < 3; i++) {
+		wishvel[i] = forward[i] * fmove + right[i] * smove;
+	}
+
+	if ((int)sv_player->v.movetype != MOVETYPE_WALK) {
 		wishvel[2] = cmd.upmove;
-	else
+	} else {
 		wishvel[2] = 0;
+	}
 
-	VectorCopy (wishvel, wishdir);
+	VectorCopy(wishvel, wishdir);
 	wishspeed = VectorNormalize(wishdir);
-	if (wishspeed > sv_maxspeed.value)
-	{
-		VectorScale (wishvel, sv_maxspeed.value/wishspeed, wishvel);
+
+	if (wishspeed > sv_maxspeed.value) {
+		VectorScale(wishvel, sv_maxspeed.value / wishspeed, wishvel);
 		wishspeed = sv_maxspeed.value;
 	}
 
-	if ( sv_player->v.movetype == MOVETYPE_NOCLIP)
-	{	// noclip
+	if (sv_player->v.movetype == MOVETYPE_NOCLIP) {
+		// noclip
 		VectorCopy (wishvel, velocity);
-	}
-	else if ( onground )
-	{
-		SV_UserFriction ();
-		SV_Accelerate ();
-	}
-	else
-	{	// not on ground, so little effect on velocity
-		SV_AirAccelerate (wishvel);
+	} else if (onground) {
+		SV_UserFriction();
+		SV_Accelerate();
+	} else {
+		// not on ground, so little effect on velocity
+		SV_AirAccelerate(wishvel);
 	}
 }
 
@@ -414,7 +433,8 @@ void SV_ClientThink(void) {
 	}
 
 	// walk
-	if ((sv_player->v.waterlevel >= 2) && (sv_player->v.movetype != MOVETYPE_NOCLIP)) {
+	if ((sv_player->v.waterlevel >= 2) &&
+			(sv_player->v.movetype != MOVETYPE_NOCLIP)) {
 		SV_WaterMove();
 		return;
 	}
@@ -428,40 +448,40 @@ void SV_ClientThink(void) {
 SV_ReadClientMove
 ===================
 */
-void SV_ReadClientMove (usercmd_t *move)
-{
-	int		i;
-	vec3_t	angle;
-	int		bits;
-
-// read ping time
-	host_client->ping_times[host_client->num_pings%NUM_PING_TIMES]
-		= sv.time - MSG_ReadFloat ();
+void SV_ReadClientMove(usercmd_t* move) {
+	// read ping time
+	host_client->ping_times[host_client->num_pings%NUM_PING_TIMES] =
+			sv.time - MSG_ReadFloat();
 	host_client->num_pings++;
 
-// read current angles
-	for (i=0 ; i<3 ; i++)
-		angle[i] = MSG_ReadAngle ();
+	// read current angles
+	vec3_t angle;
 
-	VectorCopy (angle, host_client->edict->v.v_angle);
+	for (int i = 0; i < 3; i++) {
+		angle[i] = MSG_ReadAngle();
+	}
 
-// read movement
-	move->forwardmove = MSG_ReadShort ();
-	move->sidemove = MSG_ReadShort ();
-	move->upmove = MSG_ReadShort ();
+	VectorCopy(angle, host_client->edict->v.v_angle);
 
-// read buttons
-	bits = MSG_ReadByte ();
+	// read movement
+	move->forwardmove = MSG_ReadShort();
+	move->sidemove = MSG_ReadShort();
+	move->upmove = MSG_ReadShort();
+
+	// read buttons
+	int bits = MSG_ReadByte();
 	host_client->edict->v.button0 = bits & 1;
-	host_client->edict->v.button2 = (bits & 2)>>1;
+	host_client->edict->v.button2 = (bits & 2) >> 1;
 
-	i = MSG_ReadByte ();
-	if (i)
-		host_client->edict->v.impulse = i;
+	int impulse = MSG_ReadByte();
+
+	if (impulse) {
+		host_client->edict->v.impulse = impulse;
+	}
 
 #ifdef QUAKE2
-// read light level
-	host_client->edict->v.light_level = MSG_ReadByte ();
+	// read light level
+	host_client->edict->v.light_level = MSG_ReadByte();
 #endif
 }
 
@@ -475,7 +495,7 @@ Returns false if the client should be killed
 qboolean SV_ReadClientMessage(void) {
 	int ret;
 	int cmd;
-	char *s;
+	char* s;
 
 	do {
 nextmsg:
@@ -507,10 +527,10 @@ nextmsg:
 
 			switch (cmd) {
 				case -1:
-					goto nextmsg;		// end of message
+					goto nextmsg;  // end of message
 
 				case clc_nop:
-					// Sys_Printf ("clc_nop\n");
+					// Sys_Printf("clc_nop\n");
 					break;
 
 				case clc_stringcmd:

@@ -636,6 +636,7 @@ void Cmd_ExecuteString(char *text, cmd_source_t src) {
 	// check functions
 	for (cmd = cmd_functions; cmd; cmd = cmd->next) {
 		if (!Q_strcasecmp(cmd_argv[0], cmd->name)) {
+			// Sys_Printf("function: %s\n", text);
 			cmd->function();
 			return;
 		}
@@ -644,6 +645,7 @@ void Cmd_ExecuteString(char *text, cmd_source_t src) {
 	// check aliases
 	for (alias = cmd_alias; alias; alias = alias->next) {
 		if (!Q_strcasecmp(cmd_argv[0], alias->name)) {
+			// Sys_Printf("alias: %s\n", text);
 			Cbuf_Prepend(alias->value);
 			return;
 		}
@@ -652,6 +654,8 @@ void Cmd_ExecuteString(char *text, cmd_source_t src) {
 	// check cvars
 	if (!Cvar_Command()) {
 		Con_Printf("Unknown command \"%s\"\n", Cmd_Argv(0));
+	} else {
+		// Sys_Printf("cvar: %s\n", text);
 	}
 }
 

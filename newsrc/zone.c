@@ -303,6 +303,8 @@ void Z_CheckHeap(void) {
 	}
 }
 
+
+
 /*
 ==============================================================================
 
@@ -596,6 +598,8 @@ void *Hunk_TempAlloc(int size) {
 
 	return buf;
 }
+
+
 
 /*
 ===============================================================================
@@ -892,14 +896,14 @@ void Cache_Free(cache_user_t *c) {
 Cache_Check
 ==============
 */
-void *Cache_Check(cache_user_t *c) {
-	cache_system_t *cs;
+void* Cache_Check(cache_user_t* c) {
+	cache_system_t* cs;
 
 	if (!c->data) {
 		return NULL;
 	}
 
-	cs = ((cache_system_t *)c->data) - 1;
+	cs = ((cache_system_t*)c->data) - 1;
 
 	// move to head of LRU
 	Cache_UnlinkLRU(cs);
@@ -949,7 +953,10 @@ void *Cache_Alloc(cache_user_t *c, int size, char *name) {
 	return Cache_Check(c);
 }
 
+
+
 //============================================================================
+
 
 
 void Zone_Init() {

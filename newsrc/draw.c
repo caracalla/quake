@@ -24,78 +24,84 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 
 typedef struct {
-	vrect_t	rect;
-	int		width;
-	int		height;
-	byte	*ptexbytes;
-	int		rowbytes;
+	vrect_t rect;
+	int width;
+	int height;
+	byte* ptexbytes;
+	int rowbytes;
 } rectdesc_t;
 
-static rectdesc_t	r_rectdesc;
+static rectdesc_t r_rectdesc;
 
-byte		*draw_chars;				// 8*8 graphic characters
-qpic_t		*draw_disc;
-qpic_t		*draw_backtile;
+byte* draw_chars;  // 8 by 8 graphic characters
+qpic_t* draw_disc;
+qpic_t* draw_backtile;
 
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s
-{
-	char		name[MAX_QPATH];
-	cache_user_t	cache;
+typedef struct cachepic_s {
+	char name[MAX_QPATH];
+	cache_user_t cache;
 } cachepic_t;
 
-#define	MAX_CACHED_PICS		128
-cachepic_t	menu_cachepics[MAX_CACHED_PICS];
-int			menu_numcachepics;
+#define	MAX_CACHED_PICS 128
+cachepic_t menu_cachepics[MAX_CACHED_PICS];
+int menu_numcachepics;
 
 
-qpic_t	*Draw_PicFromWad (char *name)
-{
-	return W_GetLumpName (name);
+// only used in:
+// * Sbar_Init to set the status bar images
+// * SCR_Init to depict RAM, net, and turtle (?)
+qpic_t* Draw_PicFromWad(char* name) {
+	return W_GetLumpName(name);
 }
 
 /*
 ================
 Draw_CachePic
+
+Draws a .lmp picture
 ================
 */
-qpic_t	*Draw_CachePic (char *path)
-{
-	cachepic_t	*pic;
-	int			i;
-	qpic_t		*dat;
+qpic_t* Draw_CachePic(char* path) {
+	cachepic_t* cached_pic = menu_cachepics;
+	int i;
 
-	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
-		if (!strcmp (path, pic->name))
+	for (i = 0; i < menu_numcachepics; cached_pic++, i++) {
+		if (!strcmp(path, cached_pic->name)) {
 			break;
+		}
+	}
 
-	if (i == menu_numcachepics)
-	{
-		if (menu_numcachepics == MAX_CACHED_PICS)
-			Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+	// path isn't in in the cache
+	if (i == menu_numcachepics) {
+		if (menu_numcachepics == MAX_CACHED_PICS) {
+			Sys_Error("menu_numcachepics == MAX_CACHED_PICS\n");
+		}
+
 		menu_numcachepics++;
-		strcpy (pic->name, path);
+
+		// cached_pic now points at the next empty item in menu_cachepics
+		strcpy(cached_pic->name, path);
 	}
 
-	dat = Cache_Check (&pic->cache);
+	qpic_t* dat = Cache_Check(&cached_pic->cache);
 
-	if (dat)
+	if (dat) {
 		return dat;
-
-//
-// load the pic from disk
-//
-	COM_LoadCacheFile (path, &pic->cache);
-
-	dat = (qpic_t *)pic->cache.data;
-	if (!dat)
-	{
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
 	}
 
-	SwapPic (dat);
+	// load the pic from disk
+	COM_LoadCacheFile(path, &cached_pic->cache);
+
+	dat = (qpic_t*)cached_pic->cache.data;
+
+	if (!dat) {
+		Sys_Error("Draw_CachePic: failed to load %s\n", path);
+	}
+
+	SwapPicByteEndianness(dat);
 
 	return dat;
 }
@@ -105,15 +111,16 @@ qpic_t	*Draw_CachePic (char *path)
 /*
 ===============
 Draw_Init
+
+Gets the font (conchars), disc icon, and tiled background
 ===============
 */
-void Draw_Init (void)
-{
-	// int		i;  // unused
+void Draw_Init(void) {
+	// int i;  // unused
 
-	draw_chars = W_GetLumpName ("conchars");
-	draw_disc = W_GetLumpName ("disc");
-	draw_backtile = W_GetLumpName ("backtile");
+	draw_chars = W_GetLumpName("conchars");
+	draw_disc = W_GetLumpName("disc");
+	draw_backtile = W_GetLumpName("backtile");
 
 	r_rectdesc.width = draw_backtile->width;
 	r_rectdesc.height = draw_backtile->height;
@@ -132,46 +139,49 @@ It can be clipped to the top of the screen to allow the console to be
 smoothly scrolled off.
 ================
 */
-void Draw_Character (int x, int y, int num)
-{
-	byte			*dest;
-	byte			*source;
-	unsigned short	*pusdest;
-	int				drawline;
-	int				row, col;
+void Draw_Character(int x, int y, int num) {
+	byte* dest;
+	byte* source;
+	unsigned short* pusdest;
+	int drawline;
+	int row;
+	int col;
 
 	num &= 255;
 
-	if (y <= -8)
-		return;			// totally off screen
+	if (y <= -8) {
+		// totally off screen
+		return;
+	}
 
 #ifdef PARANOID
-	if (y > vid.height - 8 || x < 0 || x > vid.width - 8)
-		Sys_Error ("Con_DrawCharacter: (%i, %i)", x, y);
-	if (num < 0 || num > 255)
-		Sys_Error ("Con_DrawCharacter: char %i", num);
+	if (y > vid.height - 8 || x < 0 || x > vid.width - 8) {
+		Sys_Error("Con_DrawCharacter: (%i, %i)", x, y);
+	}
+
+	if (num < 0 || num > 255) {
+		Sys_Error("Con_DrawCharacter: char %i", num);
+	}
 #endif
 
-	row = num>>4;
-	col = num&15;
-	source = draw_chars + (row<<10) + (col<<3);
+	row = num >> 4;
+	col = num & 15;
+	source = draw_chars + (row << 10) + (col << 3);
+	source = draw_chars + (row << 10) + (col << 3);
 
-	if (y < 0)
-	{	// clipped
+	if (y < 0) {
+		// clipped
 		drawline = 8 + y;
 		source -= 128*y;
 		y = 0;
-	}
-	else
+	} else {
 		drawline = 8;
+	}
 
+	if (r_pixbytes == 1) {
+		dest = vid.conbuffer + y * vid.conrowbytes + x;
 
-	if (r_pixbytes == 1)
-	{
-		dest = vid.conbuffer + y*vid.conrowbytes + x;
-
-		while (drawline--)
-		{
+		while (drawline--) {
 			if (source[0])
 				dest[0] = source[0];
 			if (source[1])
@@ -188,18 +198,16 @@ void Draw_Character (int x, int y, int num)
 				dest[6] = source[6];
 			if (source[7])
 				dest[7] = source[7];
+
 			source += 128;
 			dest += vid.conrowbytes;
 		}
-	}
-	else
-	{
-	// FIXME: pre-expand to native format?
-		pusdest = (unsigned short *)
-				((byte *)vid.conbuffer + y*vid.conrowbytes + (x<<1));
+	} else {
+		// FIXME: pre-expand to native format?
+		pusdest = (unsigned short*)
+				((byte*)vid.conbuffer + y * vid.conrowbytes + (x << 1));
 
-		while (drawline--)
-		{
+		while (drawline--) {
 			if (source[0])
 				pusdest[0] = d_8to16table[source[0]];
 			if (source[1])
@@ -737,8 +745,7 @@ This repeats a 64*64 tile graphic to fill the screen around a sized down
 refresh window.
 =============
 */
-void Draw_TileClear (int x, int y, int w, int h)
-{
+void Draw_TileClear(int x, int y, int w, int h) {
 	int				width, height, tileoffsetx, tileoffsety;
 	byte			*psrc;
 	vrect_t			vr;

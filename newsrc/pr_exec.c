@@ -212,10 +212,12 @@ void PR_StackTrace(void) {
 /*
 ============
 PR_Profile_f
+
+Print the top 10 functions in terms of statements executed (?)
 ============
 */
 void PR_Profile_f(void) {
-	int num = 0;
+	int num_to_print = 10;
 	dfunction_t* best;
 
 	do {
@@ -231,12 +233,13 @@ void PR_Profile_f(void) {
 			}
 		}
 
+		// print the top 10 and clear out the profile values
 		if (best) {
-			if (num < 10) {
+			if (num_to_print > 0) {
 				Con_Printf("%7i %s\n", best->profile, pr_strings + best->s_name);
+				num_to_print -= 1;
 			}
 
-			num++;
 			best->profile = 0;
 		}
 	} while (best);

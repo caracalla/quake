@@ -1283,11 +1283,9 @@ COM_Path_f
 ============
 */
 void COM_Path_f(void) {
-	searchpath_t *s;
-
 	Con_Printf("Current search path:\n");
 
-	for (s = com_searchpaths; s; s = s->next) {
+	for (searchpath_t* s = com_searchpaths; s; s = s->next) {
 		if (s->pack) {
 			Con_Printf("%s (%i files)\n", s->pack->filename, s->pack->numfiles);
 		} else {

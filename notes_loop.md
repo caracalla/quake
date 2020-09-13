@@ -29,11 +29,6 @@ while (1) {
 
 ```
 void _Host_Frame(double elapsed_time) {
-	static double time1 = 0;
-	static double time2 = 0;
-	static double time3 = 0;
-	int pass1, pass2, pass3;
-
 	// keep the random time dependent
 	rand();
 
@@ -52,23 +47,13 @@ void _Host_Frame(double elapsed_time) {
 	// process console commands
 	Cbuf_Execute();
 
-	// if running the server locally, make intentions now
-	if (sv.active) {
-		CL_SendCmd ();
-	}
-
-	//-------------------
-	//
-	// server operations
-	//
-	//-------------------
+	// make intentions now
+	CL_SendCmd ();
 
 	// check for commands typed to the host
 	Host_GetConsoleCommands();
 
-	if (sv.active) {
-		Host_ServerFrame();
-	}
+	Host_ServerFrame();
 
 	host_time += host_frametime;
 
@@ -83,9 +68,25 @@ void _Host_Frame(double elapsed_time) {
 		S_Update(vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 	}
 
-	CDAudio_Update();
-
 	host_framecount++;
+}
+
+void Host_ServerFrame(void) {
+	// run the world state
+	pr_global_struct->frametime = host_frametime;
+
+	// read client messages
+	// this basically just runs SV_ClientThink()
+	SV_RunClients();
+
+	// move things around and think
+	// always pause in single player if in console or menus
+	if (!sv.paused && (svs.maxclients > 1 || key_dest == key_game) ) {
+		SV_Physics();
+	}
+
+	// send all messages to the clients
+	SV_SendClientMessages();
 }
 ```
 

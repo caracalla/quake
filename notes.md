@@ -40,8 +40,8 @@
 * MSG - message handling?  for networking?
 
 ## Memory Management
-is this right?
-
+Memory is allocated in one large chunk at the beginning of execution and is laid out as follows (is this correct?):
+```
 --- top ---
 video buffer
 z buffer
@@ -56,8 +56,10 @@ client and server low hunk allocations
 startup hunk allocations
 zone block (48k)
 --- bottom ---
+```
 
 ### Hunk
+All memory is represented by hunks (except the cache?).
 ```
 typedef struct {
 	int sentinel;
@@ -66,16 +68,15 @@ typedef struct {
 } hunk_t;
 ```
 
-hunk_base - pointer to the memory allocated to the hunk
-hunk_size - size in bytes of hunk_base
-hunk_low_used - amount of low hunk used in bytes
-hunk_high_used - amount of high hunk used in bytes
-
-Low and high allocatable spaces behave the same.
-
-Items can be temporarily allocated to the high hunk, but they will be deallocated as soon as anything tries to allocate to the high hunk
+* `hunk_base` - pointer to the memory allocated to the hunk
+* `hunk_size` - size in bytes of hunk_base
+* `hunk_low_used` - amount of low hunk used in bytes
+* `hunk_high_used` - amount of high hunk used in bytes
+* Low and high allocatable spaces behave the same.
+* Items can be temporarily allocated to the high hunk, but they will be deallocated as soon as anything tries to allocate to the high hunk
 
 ### Zone
+Zone memory is a doubly linked list of memblock_t nodes, living within the first allocated lower portion of the hunk.  The data is stored in the space in memory just after the memblock_t for that data.
 ```
 typedef struct memblock_s {
 	int size;  // including the header and possibly tiny fragments
@@ -87,9 +88,8 @@ typedef struct memblock_s {
 } memblock_t;
 ```
 
-Doubly linked list of memblock_t nodes, living within the first allocated lower portion of the hunk.  The data is stored in the space in memory just after the memblock_t for that data.
-
 ### Cache
+Cache memory is a doubly linked list LRU that lives between the high and low hunk portions, and can be freed from to provide additional space if either the high or low hunk needs to be expanded.
 ```
 typedef struct cache_system_s {
 	int size;  // including this header
@@ -101,11 +101,6 @@ typedef struct cache_system_s {
 	struct cache_system_s *lru_next;  // for LRU flushing
 } cache_system_t;
 ```
-
-Lives between the high and low hunk portions, can be freed from to provide additional space on either end
-Doubly linked list, LRU
-
-TODO: investigate further
 
 
 
@@ -145,9 +140,10 @@ typedef struct searchpath_s {
 } searchpath_t;
 ```
 
-pak file on disk begins with `dpackheader_t`, followed by `dpackfile_t`s at `header.dirofs`
-when read into memory, the pak is represented by `pack_t`, which has many `packfile_t`s
+* pak file on disk begins with `dpackheader_t`, followed by `dpackfile_t`s at `header.dirofs`
+* when read into memory, the pak is represented by `pack_t`, which has many `packfile_t`s
 
+## Filesystem Management Functions
 * `COM_Path_f` - path command, prints all of `com_searchpaths`
 * `COM_WriteFile`
 * `COM_CreatePath` - how does this work?
@@ -195,7 +191,7 @@ when read into memory, the pak is represented by `pack_t`, which has many `packf
 * id386 - 32 bit x86 code
 * FPS_20 - experimental 20 fps server
 
-```c
+```
 // common.h
 #if !defined BYTE_DEFINED
 typedef unsigned char	   byte;
@@ -208,7 +204,7 @@ typedef unsigned char	   byte;
 typedef enum {false, true}  qboolean;
 ```
 
-```c
+```
 // zone.c
 #define HUNK_SENTINEL   0x1df001ed
 
@@ -226,7 +222,7 @@ int	 hunk_low_used;
 int	 hunk_high_used;
 ```
 
-```c
+```
 // cvar.h
 typedef struct cvar_s
 {
@@ -239,7 +235,7 @@ typedef struct cvar_s
 } cvar_t;
 ```
 
-```c
+```
 // quakedef.h
 typedef struct
 {
@@ -252,13 +248,13 @@ typedef struct
 } quakeparms_t;
 ```
 
-```c
+```
 // zone.c
 // what the hell is this doing
-size = sizeof(hunk_t) + ((size+15)&~15);
+size = sizeof(hunk_t) + ((size + 15) &~ 15);
 ```
 
-```c
+```
 // host.c
 // does this even do anything? sets the hunk low mark?
 Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
