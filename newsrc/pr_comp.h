@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // this file is shared by quake and qcc
 
+// these should REALLY be ptrdiff_t
 typedef int func_t;
 typedef int string_t;
 

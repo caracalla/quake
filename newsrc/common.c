@@ -886,26 +886,30 @@ char *COM_FileExtension(char *input) {
 /*
 ============
 COM_FileBase
+
+Expected format is directory/filename.extension
 ============
 */
-void COM_FileBase(char *in, char *out) {
-	char *s;
-	char *s2;
+void COM_FileBase(char* in, char* out) {
+	char* extension = in + strlen(in) - 1;
 
-	s = in + strlen(in) - 1;
-
-	while (s != in && *s != '.') {
-		s--;
+	// the extension and the preceding period
+	while (extension != in && *extension != '.') {
+		extension--;
 	}
 
-	for (s2 = s; *s2 && *s2 != '/'; s2--);
+	char* s2 = extension;
 
-	if (s - s2 < 2) {
+	// s2 is the slash, filename, period, and extension
+	for (; *s2 && *s2 != '/'; s2--);
+
+	if (extension - s2 < 2) {
+		// no clue what this is supposed to be for
 		strcpy(out, "?model?");
 	} else {
-		s--;
-		strncpy(out, s2 + 1, s - s2);
-		out[s - s2] = 0;
+		extension--;  // point at last character of filename
+		strncpy(out, s2 + 1, extension - s2);
+		out[extension - s2] = 0;
 	}
 }
 
@@ -1587,7 +1591,7 @@ byte *COM_LoadFile(char *path, int usehunk) {
 	} else if (usehunk == 3) {
 		buf = Cache_Alloc(loadcache, len + 1, base);
 	} else if (usehunk == 4){
-		if (len+1 > loadsize) {
+		if (len + 1 > loadsize) {
 			buf = Hunk_TempAlloc(len+1);
 		} else {
 			buf = loadbuf;

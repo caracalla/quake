@@ -1039,66 +1039,65 @@ SV_SpawnServer
 This is called at the start of each level
 ================
 */
-extern float		scr_centertime_off;
+extern float scr_centertime_off;
 
 #ifdef QUAKE2
-void SV_SpawnServer (char *server, char *startspot)
+void SV_SpawnServer(char* server, char* startspot) {
 #else
-void SV_SpawnServer (char *server)
+void SV_SpawnServer(char* server) {
 #endif
-{
-	edict_t		*ent;
-	int			i;
-
 	// let's not have any servers with no name
-	if (hostname.string[0] == 0)
-		Cvar_Set ("hostname", "UNNAMED");
-	scr_centertime_off = 0;
-
-	Con_DPrintf ("SpawnServer: %s\n",server);
-	svs.changelevel_issued = false;		// now safe to issue another
-
-//
-// tell all connected clients that we are going to a new level
-//
-	if (sv.active)
-	{
-		SV_SendReconnect ();
+	if (hostname.string[0] == 0) {
+		Cvar_Set("hostname", "UNNAMED");
 	}
 
-//
-// make cvars consistant
-//
-	if (coop.value)
-		Cvar_SetValue ("deathmatch", 0);
+	scr_centertime_off = 0;
+
+	Con_DPrintf("SpawnServer: %s\n", server);
+	svs.changelevel_issued = false;  // now safe to issue another
+
+	// tell all connected clients that we are going to a new level
+	if (sv.active) {
+		SV_SendReconnect();
+	}
+
+	// make cvars consistent
+	if (coop.value) {
+		Cvar_SetValue("deathmatch", 0);
+	}
+
 	current_skill = (int)(skill.value + 0.5);
-	if (current_skill < 0)
+
+	if (current_skill < 0) {
 		current_skill = 0;
-	if (current_skill > 3)
+	}
+
+	if (current_skill > 3) {
 		current_skill = 3;
+	}
 
-	Cvar_SetValue ("skill", (float)current_skill);
+	Cvar_SetValue("skill", (float)current_skill);
 
-//
-// set up the new server
-//
-	Host_ClearMemory ();
+	// set up the new server
+	Host_ClearMemory();
 
-	memset (&sv, 0, sizeof(sv));
+	memset(&sv, 0, sizeof(sv));
 
-	strcpy (sv.name, server);
+	strcpy(sv.name, server);
+
 #ifdef QUAKE2
-	if (startspot)
+	if (startspot) {
 		strcpy(sv.startspot, startspot);
+	}
 #endif
 
-// load progs to get entity field count
-	PR_LoadProgs ();
+	// load progs to get entity field count
+	PR_LoadProgs();
 
-// allocate server memory
+	// allocate server memory
 	sv.max_edicts = MAX_EDICTS;
 
-	sv.edicts = Hunk_AllocName (sv.max_edicts*pr_edict_size, "edicts");
+	sv.edicts = Hunk_AllocName(sv.max_edicts * pr_edict_size, "edicts");
 
 	sv.datagram.maxsize = sizeof(sv.datagram_buf);
 	sv.datagram.cursize = 0;
@@ -1112,11 +1111,11 @@ void SV_SpawnServer (char *server)
 	sv.signon.cursize = 0;
 	sv.signon.data = sv.signon_buf;
 
-// leave slots at start for clients only
-	sv.num_edicts = svs.maxclients+1;
-	for (i=0 ; i<svs.maxclients ; i++)
-	{
-		ent = EDICT_NUM(i+1);
+	// leave slots at start for clients only
+	sv.num_edicts = svs.maxclients + 1;
+
+	for (int i = 0; i < svs.maxclients; i++) {
+		edict_t* ent = EDICT_NUM(i + 1);
 		svs.clients[i].edict = ent;
 	}
 
@@ -1125,49 +1124,47 @@ void SV_SpawnServer (char *server)
 
 	sv.time = 1.0;
 
-	strcpy (sv.name, server);
-	sprintf (sv.modelname,"maps/%s.bsp", server);
-	sv.worldmodel = Mod_ForName (sv.modelname, false);
-	if (!sv.worldmodel)
-	{
-		Con_Printf ("Couldn't spawn server %s\n", sv.modelname);
+	strcpy(sv.name, server);  // why twice? mistake?
+	sprintf(sv.modelname, "maps/%s.bsp", server);
+	sv.worldmodel = Mod_ForName(sv.modelname, false);
+
+	if (!sv.worldmodel) {
+		Con_Printf("Couldn't spawn server %s\n", sv.modelname);
 		sv.active = false;
 		return;
 	}
+
 	sv.models[1] = sv.worldmodel;
 
-//
-// clear world interaction links
-//
-	SV_ClearWorld ();
+	// clear world interaction links
+	SV_ClearWorld();
 
 	sv.sound_precache[0] = pr_strings;
-
 	sv.model_precache[0] = pr_strings;
 	sv.model_precache[1] = sv.modelname;
 
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
-		sv.model_precache[1 + i] = localmodels[i];
-		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
+	for (int i = 1; i < sv.worldmodel->numsubmodels; i++) {
+		sv.model_precache[i + 1] = localmodels[i];
+		sv.models[i + 1] = Mod_ForName(localmodels[i], false);
 	}
 
-//
-// load the rest of the entities
-//
-	ent = EDICT_NUM(0);
-	memset (&ent->v, 0, progs->entityfields * 4);
+	// load the rest of the entities
+	edict_t* ent = EDICT_NUM(0);
+	memset(&ent->v, 0, progs->entityfields * 4);
 	ent->free = false;
 	ent->v.model = sv.worldmodel->name - pr_strings;
-	ent->v.modelindex = 1;		// world model
+	ent->v.modelindex = 1;  // world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
-	if (coop.value)
+	if (coop.value) {
 		pr_global_struct->coop = coop.value;
-	else
+	} else {
 		pr_global_struct->deathmatch = deathmatch.value;
+	}
 
 	pr_global_struct->mapname = sv.name - pr_strings;
+
 #ifdef QUAKE2
 	pr_global_struct->startspot = sv.startspot - pr_strings;
 #endif
@@ -1175,25 +1172,29 @@ void SV_SpawnServer (char *server)
 // serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 
-	ED_LoadFromFile (sv.worldmodel->entities);
+	ED_LoadFromFile(sv.worldmodel->entities);
 
 	sv.active = true;
 
-// all setup is completed, any further precache statements are errors
+	// all setup is completed, any further precache statements are errors
 	sv.state = ss_active;
 
-// run two frames to allow everything to settle
+	// run two frames to allow everything to settle
 	host_frametime = 0.1;
-	SV_Physics ();
-	SV_Physics ();
+	SV_Physics();
+	SV_Physics();
 
-// create a baseline for more efficient communications
-	SV_CreateBaseline ();
+	// create a baseline for more efficient communications
+	SV_CreateBaseline();
 
-// send serverinfo to all connected clients
-	for (i=0,host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
-		if (host_client->active)
-			SV_SendServerinfo (host_client);
+	// send serverinfo to all connected clients
+	host_client = svs.clients;
 
-	Con_DPrintf ("Server spawned.\n");
+	for (int i = 0; i < svs.maxclients; i++, host_client++) {
+		if (host_client->active) {
+			SV_SendServerinfo(host_client);
+		}
+	}
+
+	Con_DPrintf("Server spawned.\n");
 }

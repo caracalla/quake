@@ -25,33 +25,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "r_local.h"
 
-model_t	*loadmodel;
-char	loadname[32];	// for hunk tags
+model_t* loadmodel;
+char loadname[32];	// for hunk tags
 
-void Mod_LoadSpriteModel (model_t *mod, void *buffer);
-void Mod_LoadBrushModel (model_t *mod, void *buffer);
-void Mod_LoadAliasModel (model_t *mod, void *buffer);
-model_t *Mod_LoadModel (model_t *mod, qboolean crash);
+void Mod_LoadSpriteModel(model_t* mod, void* buffer);
+void Mod_LoadBrushModel(model_t* mod, void* buffer);
+void Mod_LoadAliasModel(model_t* mod, void* buffer);
+model_t* Mod_LoadModel(model_t* mod, qboolean crash);
 
-byte	mod_novis[MAX_MAP_LEAFS/8];
+byte mod_novis[MAX_MAP_LEAFS / 8];
 
-#define	MAX_MOD_KNOWN	256
-model_t	mod_known[MAX_MOD_KNOWN];
-int		mod_numknown;
+// list of loaded models
+#define MAX_MOD_KNOWN 256
+model_t mod_known[MAX_MOD_KNOWN];
+int mod_numknown;
 
 // values for model_t's needload
-#define NL_PRESENT		0
-#define NL_NEEDS_LOADED	1
-#define NL_UNREFERENCED	2
+#define NL_PRESENT 0  // model has been loaded
+#define NL_NEEDS_LOADED 1  // model needs to be loaded
+#define NL_UNREFERENCED 2  // this spot in mod_known is free to be reallocated
 
 /*
 ===============
 Mod_Init
 ===============
 */
-void Mod_Init (void)
-{
-	memset (mod_novis, 0xff, sizeof(mod_novis));
+void Mod_Init(void) {
+	memset(mod_novis, 0xff, sizeof(mod_novis));
 }
 
 /*
@@ -184,48 +184,56 @@ Mod_FindName
 
 ==================
 */
-model_t *Mod_FindName (char *name)
-{
-	int		i;
-	model_t	*mod;
-	model_t	*avail = NULL;
-
-	if (!name[0])
-		Sys_Error ("Mod_ForName: NULL name");
-
-//
-// search the currently loaded models
-//
-	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
-	{
-		if (!strcmp (mod->name, name) )
-			break;
-		if (mod->needload == NL_UNREFERENCED)
-			if (!avail || mod->type != mod_alias)
-				avail = mod;
+model_t* Mod_FindName(char* name) {
+	if (!name[0]) {
+		Sys_Error("Mod_ForName: NULL name");
 	}
 
-	if (i == mod_numknown)
-	{
-		if (mod_numknown == MAX_MOD_KNOWN)
-		{
-			if (avail)
-			{
-				mod = avail;
-				if (mod->type == mod_alias)
-					if (Cache_Check (&mod->cache))
-						Cache_Free (&mod->cache);
-			}
-			else
-				Sys_Error ("mod_numknown == MAX_MOD_KNOWN");
+	// search the currently loaded models
+	int i = 0;
+	model_t* model = mod_known;
+	model_t* avail = NULL;
+
+	for (; i < mod_numknown; i++, model++) {
+		if (!strcmp(model->name, name) ) {
+			// break;
+			return model;
 		}
-		else
-			mod_numknown++;
-		strcpy (mod->name, name);
-		mod->needload = NL_NEEDS_LOADED;
+
+		// find the first available spot in mod_known
+		if (model->needload == NL_UNREFERENCED) {
+			if (!avail || model->type != mod_alias) {
+				avail = model;
+			}
+		}
 	}
 
-	return mod;
+	if (i == mod_numknown) {
+		if (mod_numknown == MAX_MOD_KNOWN) {
+			// there's no space at the end of mod_known
+			if (avail) {
+				// but there's an available spot within mod_known
+				model = avail;
+
+				if (model->type == mod_alias) {
+					if (Cache_Check(&model->cache)) {
+						Cache_Free(&model->cache);
+					}
+				}
+			} else {
+				// no free spots available
+				Sys_Error("mod_numknown == MAX_MOD_KNOWN");
+			}
+		} else {
+			// there's space at the end of mod_known
+			mod_numknown++;
+		}
+
+		strcpy(model->name, name);
+		model->needload = NL_NEEDS_LOADED;
+	}
+
+	return model;
 }
 
 /*
@@ -254,70 +262,59 @@ Mod_LoadModel
 Loads a model into the cache
 ==================
 */
-model_t *Mod_LoadModel (model_t *mod, qboolean crash)
-{
-	unsigned *buf;
-	byte	stackbuf[1024];		// avoid dirtying the cache heap
-
-	if (mod->type == mod_alias)
-	{
-		if (Cache_Check (&mod->cache))
-		{
-			mod->needload = NL_PRESENT;
-			return mod;
+model_t* Mod_LoadModel(model_t* model, qboolean crash) {
+	if (model->type == mod_alias) {
+		if (Cache_Check(&model->cache)) {
+			model->needload = NL_PRESENT;
+			return model;
+		}
+	} else {
+		if (model->needload == NL_PRESENT) {
+			return model;
 		}
 	}
-	else
-	{
-		if (mod->needload == NL_PRESENT)
-			return mod;
-	}
 
-//
-// because the world is so huge, load it one piece at a time
-//
+	// because the world is so huge, load it one piece at a time
 
-//
-// load the file
-//
-	buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
+	// load the file
+	byte stackbuf[1024];  // avoid dirtying the cache heap
+	unsigned* buf = (unsigned*)COM_LoadStackFile(
+			model->name,
+			stackbuf,
+			sizeof(stackbuf));
 
 	if (!buf) {
 		if (crash) {
-			Sys_Error ("Mod_NumForName: %s not found", mod->name);
+			Sys_Error("Mod_NumForName: %s not found", model->name);
 		}
 
 		return NULL;
 	}
 
-//
-// allocate a new model
-//
-	COM_FileBase (mod->name, loadname);
+	// allocate a new model
+	COM_FileBase(model->name, loadname);
 
-	loadmodel = mod;
+	loadmodel = model;
 
 	// fill it in
+	model->needload = NL_PRESENT;
 
 	// call the apropriate loader
-	mod->needload = NL_PRESENT;
+	switch (LittleLong(*(unsigned*)buf)) {
+		case IDPOLYHEADER:
+			Mod_LoadAliasModel(model, buf);
+			break;
 
-	switch (LittleLong(*(unsigned *)buf))
-	{
-	case IDPOLYHEADER:
-		Mod_LoadAliasModel (mod, buf);
-		break;
+		case IDSPRITEHEADER:
+			Mod_LoadSpriteModel(model, buf);
+			break;
 
-	case IDSPRITEHEADER:
-		Mod_LoadSpriteModel (mod, buf);
-		break;
-
-	default:
-		Mod_LoadBrushModel (mod, buf);
-		break;
+		default:
+			Mod_LoadBrushModel(model, buf);
+			break;
 	}
 
-	return mod;
+	return model;
 }
 
 /*
@@ -327,10 +324,10 @@ Mod_ForName
 Loads in a model for the given name
 ==================
 */
-model_t* Mod_ForName(char* name, qboolean crash){
-	model_t* mod = Mod_FindName(name);
+model_t* Mod_ForName(char* name, qboolean crash) {
+	model_t* model = Mod_FindName(name);
 
-	return Mod_LoadModel(mod, crash);
+	return Mod_LoadModel(model, crash);
 }
 
 

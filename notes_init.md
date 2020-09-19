@@ -181,3 +181,61 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 	* stop - `CL_Stop_f`
 	* playdemo - `CL_PlayDemo_f`
 	* timedemo - `CL_TimeDemo_f`
+
+## `SV_SpawnServer`
+
+Called when loading a save or starting a map
+
+1. sets `scr_centertime_off` to 0 (??)
+1. sets `svs.changelevel_issued` to false, allowing another changelevel?
+1. tells all clients to reconnect
+1. sets `skill` and `current_skill`
+1. `Host_ClearMemory` and `memset(&sv, 0, sizeof(sv))`
+1. sets `sv.name` with the level's name or whatever
+1. `PR_LoadProgs()` - sets all the `pr_*` globals
+
+```c
+strcpy(sv.name, server);  // the level name
+sv.max_edicts = MAX_EDICTS;
+sv.edicts = Hunk_AllocName(sv.max_edicts * pr_edict_size, "edicts");
+sv.datagram.maxsize = sizeof(sv.datagram_buf);
+sv.datagram.cursize = 0;
+sv.datagram.data = sv.datagram_buf;
+sv.reliable_datagram.maxsize = sizeof(sv.reliable_datagram_buf);
+sv.reliable_datagram.cursize = 0;
+sv.reliable_datagram.data = sv.reliable_datagram_buf;
+sv.signon.maxsize = sizeof(sv.signon_buf);
+sv.signon.cursize = 0;
+sv.signon.data = sv.signon_buf;
+sv.num_edicts = svs.maxclients + 1;
+sv.state = ss_loading;
+sv.paused = false;
+sv.time = 1.0;
+sprintf(sv.modelname, "maps/%s.bsp", server);
+sv.worldmodel = Mod_ForName(sv.modelname, false); // model_t*
+	model_t* model = Mod_FindName(sv.modelname);
+		// walks `mod_known` to find a free spot and puts the model_t* there
+		strcpy(model->name, sv.modelname);
+		return model;
+	return Mod_LoadModel(mod, false);
+		// I really don't get this, it allocates the model into 1024 bytes?
+		// then it calls the appropriate `Mod_Load[...]Model` function
+sv.models[1] = sv.worldmodel;
+sv.sound_precache[0] = pr_strings;
+sv.model_precache[0] = pr_strings;
+sv.model_precache[1] = sv.modelname;
+for (int i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	sv.model_precache[1 + i] = localmodels[i];
+	sv.models[i + 1] = Mod_ForName (localmodels[i], false);
+}
+
+
+
+edict_t* ent = EDICT_NUM(0);
+memset(&ent->v, 0, progs->entityfields * 4);
+ent->free = false;
+ent->v.model = sv.worldmodel->name - pr_strings;
+ent->v.modelindex = 1;  // world model
+ent->v.solid = SOLID_BSP;
+ent->v.movetype = MOVETYPE_PUSH;
+```
