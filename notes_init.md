@@ -50,6 +50,10 @@ Returns the index in `com_argv` of the desired arg, returns 0 if not found
 1. `Chase_Init` - registers camera chase cvars
 1. `Host_InitVCR` - inits playback or record if desired
 1. `COM_Init` - checks for endianness, registers some cvars, adds path command, inits filesystem, and does registration check
+	1. `COM_InitFilesystem` - loads files from `basedir`, sets up `cachedir`, adds game directories
+		* what's the deal with `cachedir`?
+		1. `COM_AddGameDirectory` - iterates through `pakN.pak` files in the directory
+			1. `COM_LoadPackFile` - reads header, checks if it's been modified (`com_modified`), load references to packfiles into hunk, keeps the packfile open
 1. `Host_InitLocal` - adds a crapton of commands, registers more cvars, sets host time (what's a think?)
 1. `W_LoadWadFile` - loads gfx.wad (what's `LittleLong`? a cast?)
 1. `Key_Init` - registers keys that can't be rebound, shifted keys, and binding commands

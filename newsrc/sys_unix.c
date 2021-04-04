@@ -303,7 +303,7 @@ int main(int argc, char** argv) {
 	}
 
 	parms.membase = malloc(parms.memsize);
-	parms.basedir = basedir;
+	parms.basedir = basedir;  // unused, see COM_InitFilesystem()
 
 	fcntl(0, F_SETFL, fcntl(0, F_GETFL, 0) | FNDELAY);
 

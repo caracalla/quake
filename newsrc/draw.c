@@ -61,7 +61,7 @@ qpic_t* Draw_PicFromWad(char* name) {
 ================
 Draw_CachePic
 
-Draws a .lmp picture
+Loads a .lmp picture from cache or writes through
 ================
 */
 qpic_t* Draw_CachePic(char* path) {
@@ -69,7 +69,7 @@ qpic_t* Draw_CachePic(char* path) {
 	int i;
 
 	for (i = 0; i < menu_numcachepics; cached_pic++, i++) {
-		if (!strcmp(path, cached_pic->name)) {
+		if (strcmp(path, cached_pic->name) == 0) {
 			break;
 		}
 	}
@@ -236,11 +236,9 @@ void Draw_Character(int x, int y, int num) {
 Draw_String
 ================
 */
-void Draw_String (int x, int y, char *str)
-{
-	while (*str)
-	{
-		Draw_Character (x, y, *str);
+void Draw_String(int x, int y, char* str) {
+	while (*str) {
+		Draw_Character(x, y, *str);
 		str++;
 		x += 8;
 	}
@@ -255,27 +253,21 @@ This is for debugging lockups by drawing different chars in different parts
 of the code.
 ================
 */
-void Draw_DebugChar (char num)
-{
-	byte			*dest;
-	byte			*source;
-	int				drawline;
-	extern byte		*draw_chars;
-	int				row, col;
+void Draw_DebugChar(char num) {
+	if (!vid.direct) {
+		// don't have direct FB access, so no debugchars...
+		return;
+	}
 
-	if (!vid.direct)
-		return;		// don't have direct FB access, so no debugchars...
+	int drawline = 8;
+	int row = num >> 4;
+	int col = num & 15;
+	extern byte* draw_chars;
 
-	drawline = 8;
+	byte* source = draw_chars + (row << 10) + (col << 3);
+	byte* dest = vid.direct + 312;
 
-	row = num>>4;
-	col = num&15;
-	source = draw_chars + (row<<10) + (col<<3);
-
-	dest = vid.direct + 312;
-
-	while (drawline--)
-	{
+	while (drawline--) {
 		dest[0] = source[0];
 		dest[1] = source[1];
 		dest[2] = source[2];
@@ -294,42 +286,32 @@ void Draw_DebugChar (char num)
 Draw_Pic
 =============
 */
-void Draw_Pic (int x, int y, qpic_t *pic)
-{
-	byte			*dest, *source;
-	unsigned short	*pusdest;
-	int				v, u;
-
+void Draw_Pic(int x, int y, qpic_t* pic) {
+	// bounds checking
 	if ((x < 0) ||
-		(x + pic->width > vid.width) ||
-		(y < 0) ||
-		(y + pic->height > vid.height))
-	{
-		Sys_Error ("Draw_Pic: bad coordinates");
+			(x + pic->width > vid.width) ||
+			(y < 0) ||
+			(y + pic->height > vid.height)) {
+		Sys_Error("Draw_Pic: bad coordinates");
 	}
 
-	source = pic->data;
+	byte* source = pic->data;
 
-	if (r_pixbytes == 1)
-	{
-		dest = vid.buffer + y * vid.rowbytes + x;
+	if (r_pixbytes == 1) {
+		byte* dest = vid.buffer + y * vid.rowbytes + x;
 
-		for (v=0 ; v<pic->height ; v++)
-		{
-			Q_memcpy (dest, source, pic->width);
+		for (int i = 0; i < pic->height; i++) {
+			Q_memcpy(dest, source, pic->width);
 			dest += vid.rowbytes;
 			source += pic->width;
 		}
-	}
-	else
-	{
-	// FIXME: pretranslate at load time?
-		pusdest = (unsigned short *)vid.buffer + y * (vid.rowbytes >> 1) + x;
+	} else {
+		// FIXME: pretranslate at load time?
+		unsigned short* pusdest =
+				(unsigned short*)vid.buffer + y * (vid.rowbytes >> 1) + x;
 
-		for (v=0 ; v<pic->height ; v++)
-		{
-			for (u=0 ; u<pic->width ; u++)
-			{
+		for (int v = 0; v < pic->height; v++) {
+			for (int u = 0; u < pic->width; u++) {
 				pusdest[u] = d_8to16table[source[u]];
 			}
 
@@ -402,10 +384,8 @@ void Draw_TransPic (int x, int y, qpic_t *pic)
 				source += pic->width;
 			}
 		}
-	}
-	else
-	{
-	// FIXME: pretranslate at load time?
+	} else {
+		// FIXME: pretranslate at load time?
 		pusdest = (unsigned short *)vid.buffer + y * (vid.rowbytes >> 1) + x;
 
 		for (v=0 ; v<pic->height ; v++)

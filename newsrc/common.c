@@ -1166,7 +1166,7 @@ COM_Init
 
 void COM_Path_f(void);
 
-void COM_Init(char *basedir) {
+void COM_Init() {
 	byte swaptest[2] = {1,0};
 
 // set the byte swapping variables in a portable manner
@@ -1275,11 +1275,11 @@ char com_gamedir[MAX_OSPATH];
 
 typedef struct searchpath_s {
 	char filename[MAX_OSPATH];
-	pack_t *pack;  // only one of filename / pack will be used
-	struct searchpath_s *next;
+	pack_t* pack;  // only one of filename / pack will be used
+	struct searchpath_s* next;
 } searchpath_t;
 
-searchpath_t *com_searchpaths;
+searchpath_t* com_searchpaths;
 
 /*
 ============
@@ -1305,13 +1305,11 @@ COM_WriteFile
 The filename will be prefixed by the current game directory
 ============
 */
-void COM_WriteFile(char *filename, void *data, int len) {
-	int handle;
+void COM_WriteFile(char* filename, void* data, int len) {
 	char name[MAX_OSPATH];
-
 	sprintf(name, "%s/%s", com_gamedir, filename);
 
-	handle = Sys_FileOpenWrite(name);
+	int handle = Sys_FileOpenWrite(name);
 
 	if (handle == -1) {
 		Sys_Printf("COM_WriteFile: failed on %s\n", name);
@@ -1331,10 +1329,8 @@ COM_CreatePath
 Only used for CopyFile
 ============
 */
-void COM_CreatePath(char *path) {
-	char *ofs;
-
-	for (ofs = path + 1; *ofs; ofs++) {
+void COM_CreatePath(char* path) {
+	for (char* ofs = path + 1; *ofs; ofs++) {
 		if (*ofs == '/') {
 			// create the directory
 			*ofs = 0;
@@ -1353,21 +1349,18 @@ Copies a file over from the net to the local cache, creating any directories
 needed.  This is for the convenience of developers using ISDN from home.
 ===========
 */
-void COM_CopyFile(char *netpath, char *cachepath) {
-	int in, out;
-	int remaining, count;
+void COM_CopyFile(char* netpath, char* cachepath) {
+	int in;
+	int remaining = Sys_FileOpenRead(netpath, &in);
+
+	COM_CreatePath(cachepath);  // create directories up to the cache file
+
+	int out = Sys_FileOpenWrite(cachepath);
+
 	char buf[4096];
 
-	remaining = Sys_FileOpenRead(netpath, &in);
-	COM_CreatePath(cachepath);  // create directories up to the cache file
-	out = Sys_FileOpenWrite(cachepath);
-
 	while (remaining) {
-		if (remaining < sizeof(buf)) {
-			count = remaining;
-		} else {
-			count = sizeof(buf);
-		}
+		int count = (remaining < sizeof(buf)) ? remaining : sizeof(buf);
 
 		Sys_FileRead(in, buf, count);
 		Sys_FileWrite(out, buf, count);
@@ -1386,14 +1379,9 @@ Finds the file in the search path.
 Sets com_filesize and one of handle or file
 ===========
 */
-int COM_FindFile(char *filename, int *handle, FILE **file) {
-	searchpath_t *search;
+int COM_FindFile(char* filename, int* handle, FILE** file) {
 	char netpath[MAX_OSPATH];
 	char cachepath[MAX_OSPATH];
-	pack_t *pak;
-	int i;
-	int findtime;
-	int cachetime;
 
 	if (file && handle) {
 		Sys_Error("COM_FindFile: both handle and file set");
@@ -1404,7 +1392,7 @@ int COM_FindFile(char *filename, int *handle, FILE **file) {
 	}
 
 	// search through the path, one element at a time
-	search = com_searchpaths;
+	searchpath_t* search = com_searchpaths;
 
 	if (proghack) {
 		// gross hack to use quake 1 progs with quake 2 maps
@@ -1413,16 +1401,16 @@ int COM_FindFile(char *filename, int *handle, FILE **file) {
 		}
 	}
 
-	for ( ; search; search = search->next) {
+	for (; search; search = search->next) {
 		// is the element a pak file?
 		if (search->pack) {
 			// look through all the pak file elements
-			pak = search->pack;
+			pack_t* pak = search->pack;
 
-			for (i = 0; i < pak->numfiles; i++) {
+			for (int i = 0; i < pak->numfiles; i++) {
 				if (!strcmp(pak->files[i].name, filename)) {
 					// found it!
-					Sys_Printf("PackFile: %s : %s\n",pak->filename, filename);
+					Con_DPrintf("COM_FindFile - PackFile: %s : %s\n", pak->filename, filename);
 
 					if (handle) {
 						*handle = pak->handle;
@@ -1451,7 +1439,7 @@ int COM_FindFile(char *filename, int *handle, FILE **file) {
 
 			sprintf(netpath, "%s/%s", search->filename, filename);
 
-			findtime = Sys_FileTime(netpath);
+			int findtime = Sys_FileTime(netpath);
 
 			if (findtime == -1) {
 				continue;
@@ -1471,7 +1459,7 @@ int COM_FindFile(char *filename, int *handle, FILE **file) {
 				sprintf(cachepath, "%s%s", com_cachedir, netpath);
 #endif
 
-				cachetime = Sys_FileTime(cachepath);
+				int cachetime = Sys_FileTime(cachepath);
 
 				if (cachetime < findtime) {
 					COM_CopyFile(netpath, cachepath);
@@ -1480,13 +1468,15 @@ int COM_FindFile(char *filename, int *handle, FILE **file) {
 				strcpy(netpath, cachepath);
 			}
 
-			Sys_Printf("FindFile: %s\n",netpath);
-			com_filesize = Sys_FileOpenRead(netpath, &i);
+			Sys_Printf("COM_FindFile - not PackFile: %s\n", netpath);
+
+			int netfile_handle;
+			com_filesize = Sys_FileOpenRead(netpath, &netfile_handle);
 
 			if (handle) {
-				*handle = i;
+				*handle = netfile_handle;
 			} else {
-				Sys_FileClose(i);
+				Sys_FileClose(netfile_handle);
 				*file = fopen(netpath, "rb");
 			}
 
@@ -1516,7 +1506,7 @@ returns a handle and a length
 it may actually be inside a pak file
 ===========
 */
-int COM_OpenFile(char *filename, int *handle) {
+int COM_OpenFile(char* filename, int* handle) {
 	return COM_FindFile(filename, handle, NULL);
 }
 
@@ -1524,11 +1514,11 @@ int COM_OpenFile(char *filename, int *handle) {
 ===========
 COM_FOpenFile
 
-If the requested file is inside a packfile, a new FILE * will be opened
+If the requested file is inside a packfile, a new FILE* will be opened
 into the file.
 ===========
 */
-int COM_FOpenFile(char *filename, FILE **file) {
+int COM_FOpenFile(char* filename, FILE** file) {
 	return COM_FindFile(filename, NULL, file);
 }
 
@@ -1540,9 +1530,7 @@ If it is a pak file handle, don't really close it
 ============
 */
 void COM_CloseFile(int h) {
-	searchpath_t *s;
-
-	for (s = com_searchpaths; s; s = s->next) {
+	for (searchpath_t* s = com_searchpaths; s; s = s->next) {
 		if (s->pack && s->pack->handle == h) {
 			return;
 		}
@@ -1560,27 +1548,24 @@ Filename are relative to the quake directory.
 Always appends a 0 byte.
 ============
 */
-cache_user_t *loadcache;
-byte *loadbuf;
+cache_user_t* loadcache;
+byte* loadbuf;
 int loadsize;
 
-byte *COM_LoadFile(char *path, int usehunk) {
-	int h;
-	byte *buf;
-	char base[32];
-	int len;
-
-	buf = NULL;  // quiet compiler warning
-
+byte* COM_LoadFile(char* path, int usehunk) {
 	// look for it in the filesystem or pack files
-	len = COM_OpenFile(path, &h);
+	int h;
+	int len = COM_OpenFile(path, &h);
 
 	if (h == -1) {
 		return NULL;
 	}
 
 	// extract the filename base name for hunk tag
+	char base[32];
 	COM_FileBase(path, base);
+
+	byte* buf = NULL;  // silence compiler warning
 
 	if (usehunk == 1) {
 		buf = Hunk_AllocName(len + 1, base);
@@ -1592,7 +1577,7 @@ byte *COM_LoadFile(char *path, int usehunk) {
 		buf = Cache_Alloc(loadcache, len + 1, base);
 	} else if (usehunk == 4){
 		if (len + 1 > loadsize) {
-			buf = Hunk_TempAlloc(len+1);
+			buf = Hunk_TempAlloc(len + 1);
 		} else {
 			buf = loadbuf;
 		}
@@ -1604,7 +1589,7 @@ byte *COM_LoadFile(char *path, int usehunk) {
 		Sys_Error("COM_LoadFile: not enough space for %s", path);
 	}
 
-	((byte *)buf)[len] = 0;
+	((byte*)buf)[len] = 0;
 
 	Draw_BeginDisc();
 	Sys_FileRead(h, buf, len);
@@ -1614,28 +1599,28 @@ byte *COM_LoadFile(char *path, int usehunk) {
 	return buf;
 }
 
-byte *COM_LoadHunkFile(char *path) {
-	Sys_Printf("COM_LoadHunkFile: ");
+byte* COM_LoadHunkFile(char* path) {
+	Con_DPrintf("COM_LoadHunkFile: ");
 	return COM_LoadFile(path, 1);
 }
 
-byte *COM_LoadTempFile(char *path) {
-	Sys_Printf("COM_LoadTempFile: ");
+byte* COM_LoadTempFile(char* path) {
+	Con_DPrintf("COM_LoadTempFile: ");
 	return COM_LoadFile(path, 2);
 }
 
-void COM_LoadCacheFile(char *path, struct cache_user_s *cu) {
-	Sys_Printf("COM_LoadCacheFile: ");
+void COM_LoadCacheFile(char* path, struct cache_user_s* cu) {
+	Con_DPrintf("COM_LoadCacheFile: ");
 	loadcache = cu;
 	COM_LoadFile(path, 3);
 }
 
 // uses temp hunk if larger than bufsize
-byte *COM_LoadStackFile(char *path, void *buffer, int bufsize) {
-	Sys_Printf("COM_LoadStackFile: ");
-	byte *buf;
+byte* COM_LoadStackFile(char* path, void* buffer, int bufsize) {
+	Con_DPrintf("COM_LoadStackFile: ");
+	byte* buf;
 
-	loadbuf = (byte *)buffer;
+	loadbuf = (byte*)buffer;
 	loadsize = bufsize;
 	buf = COM_LoadFile(path, 4);
 
@@ -1650,25 +1635,20 @@ Takes an explicit (not game tree related) path to a pak file.
 
 Loads the header and directory, adding the files at the beginning
 of the list so they override previous pack files.
+
+only called in COM_AddGameDirectory and COM_InitFilesystem
 =================
 */
-pack_t *COM_LoadPackFile(char *packfile)
-{
-	int i;
-	int numpackfiles;
+pack_t* COM_LoadPackFile(char* packfile) {
 	int packhandle;
-	dpackheader_t header;
-	dpackfile_t info[MAX_FILES_IN_PACK];
-	packfile_t *newfiles;
-	pack_t *pack;
-	unsigned short crc;
 
 	if (Sys_FileOpenRead(packfile, &packhandle) == -1) {
 		// Con_Printf ("Couldn't open %s\n", packfile);
 		return NULL;
 	}
 
-	Sys_FileRead(packhandle, (void *)&header, sizeof(header));
+	dpackheader_t header;
+	Sys_FileRead(packhandle, (void*)&header, sizeof(header));
 
 	if (
 			header.id[0] != 'P' ||
@@ -1681,41 +1661,70 @@ pack_t *COM_LoadPackFile(char *packfile)
 	header.dirofs = LittleLong(header.dirofs);
 	header.dirlen = LittleLong(header.dirlen);
 
-	numpackfiles = header.dirlen / sizeof(dpackfile_t);
+	int numpackfiles = header.dirlen / sizeof(dpackfile_t);
 
 	if (numpackfiles > MAX_FILES_IN_PACK) {
 		Sys_Error("%s has %i files", packfile, numpackfiles);
 	}
 
-	if (numpackfiles != PAK0_COUNT) {
+	packfile_t* newfiles = Hunk_AllocName(
+			numpackfiles * sizeof(packfile_t),
+			"packfile");
+
+	Sys_FileSeek(packhandle, header.dirofs);
+
+	dpackfile_t info[MAX_FILES_IN_PACK];
+	Sys_FileRead(packhandle, (void*)info, header.dirlen);
+
+	// crc the directory to check for modifications
+	unsigned short crc;
+	CRC_Init(&crc);
+
+	for (int i = 0; i < header.dirlen; i++) {
+		CRC_ProcessByte(&crc, ((byte*)info)[i]);
+	}
+
+	if (numpackfiles != PAK0_COUNT || crc != PAK0_CRC) {
 		// not the original file
 		com_modified = true;
 	}
 
-	newfiles = Hunk_AllocName(numpackfiles * sizeof(packfile_t), "packfile");
+	byte file_buf[1433792 + 1024];
 
-	Sys_FileSeek(packhandle, header.dirofs);
-	Sys_FileRead(packhandle, (void *)info, header.dirlen);
+	// parse the directory info into the hunk
+	for (int i = 0; i < numpackfiles; i++) {
+		/* this dumps all the files in the pak into the directory
+		char* pos = info[i].name;
+		char* last_slash_pos = pos;
 
-	// crc the directory to check for modifications
-	CRC_Init(&crc);
+		while (*pos) {
+			if (*pos == '/') {
+				last_slash_pos = pos;
+			}
 
-	for (i = 0; i < header.dirlen; i++) {
-		CRC_ProcessByte(&crc, ((byte *)info)[i]);
-	}
+			pos++;
+		}
 
-	if (crc != PAK0_CRC) {
-		com_modified = true;
-	}
+		if (last_slash_pos != info[i].name) {
+			last_slash_pos++;
+		}
 
-	// parse the directory
-	for (i = 0; i < numpackfiles; i++) {
+		// printf("  packfile %d name: %s, file name: %s, size: %d\n", i, packfile, last_slash_pos, info[i].filelen);
+		Sys_FileSeek(packhandle, info[i].filepos);
+		Sys_FileRead(packhandle, (void*)file_buf, info[i].filelen);
+
+		COM_WriteFile(last_slash_pos, (void*)file_buf, info[i].filelen);
+		*/
+
 		strcpy(newfiles[i].name, info[i].name);
 		newfiles[i].filepos = LittleLong(info[i].filepos);
 		newfiles[i].filelen = LittleLong(info[i].filelen);
 	}
 
-	pack = Hunk_Alloc(sizeof(pack_t));
+	Sys_FileSeek(packhandle, header.dirofs);
+
+	// keep a reference to the packfile in the hunk
+	pack_t* pack = Hunk_Alloc(sizeof(pack_t));
 	strcpy(pack->filename, packfile);
 	pack->handle = packhandle;
 	pack->numfiles = numpackfiles;
@@ -1732,26 +1741,25 @@ COM_AddGameDirectory
 
 Sets com_gamedir, adds the directory to the head of the path,
 then loads and adds pak1.pak pak2.pak ...
+
+only used in COM_InitFilesystem
 ================
 */
-void COM_AddGameDirectory(char *dir) {
-	int i;
-	searchpath_t *search;
-	pack_t *pak;
+void COM_AddGameDirectory(char* dir) {
 	char pakfile[MAX_OSPATH];
 
 	strcpy(com_gamedir, dir);
 
 	// add the directory to the search path
-	search = Hunk_Alloc(sizeof(searchpath_t));
+	searchpath_t* search = Hunk_Alloc(sizeof(searchpath_t));
 	strcpy(search->filename, dir);
 	search->next = com_searchpaths;
 	com_searchpaths = search;
 
 	// add any pak files in the format pak0.pak pak1.pak, ...
-	for (i = 0; ; i++) {
-		sprintf (pakfile, "%s/pak%i.pak", dir, i);
-		pak = COM_LoadPackFile(pakfile);
+	for (int i = 0; ; i++) {
+		sprintf(pakfile, "%s/pak%i.pak", dir, i);
+		pack_t* pak = COM_LoadPackFile(pakfile);
 
 		if (!pak) {
 			break;
@@ -1771,40 +1779,37 @@ void COM_AddGameDirectory(char *dir) {
 COM_InitFilesystem
 ================
 */
-void COM_InitFilesystem(void) {
-	int i;
-	int j;
-	char basedir[MAX_OSPATH];
-	searchpath_t *search;
-
+void COM_InitFilesystem() {
 	// -basedir <path>
 	// Overrides the system supplied base directory (under GAMENAME)
-	i = COM_CheckParm("-basedir");
+	int basedir_parm = COM_CheckParm("-basedir");
+	char basedir[MAX_OSPATH];
 
-	if (i && i < com_argc - 1) {
-		strcpy(basedir, com_argv[i + 1]);
+	if (basedir_parm && basedir_parm < com_argc - 1) {
+		strcpy(basedir, com_argv[basedir_parm + 1]);
 	} else {
 		strcpy(basedir, host_parms.basedir);
 	}
 
-	j = strlen(basedir);
+	int dir_len = strlen(basedir);
 
-	if (j > 0) {
-		if ((basedir[j - 1] == '\\') || (basedir[j - 1] == '/')) {
-			basedir[j - 1] = 0;
+	if (dir_len > 0) {
+		if ((basedir[dir_len - 1] == '\\') ||
+				(basedir[dir_len - 1] == '/')) {
+			basedir[dir_len - 1] = 0;
 		}
 	}
 
 	// -cachedir <path>
 	// Overrides the system supplied cache directory (NULL or /qcache)
-	// -cachedir - will disable caching.
-	i = COM_CheckParm("-cachedir");
+	// "-cachedir -" will disable caching.
+	int cachedir_parm = COM_CheckParm("-cachedir");
 
-	if (i && i < com_argc - 1) {
-		if (com_argv[i + 1][0] == '-') {
+	if (cachedir_parm && cachedir_parm < com_argc - 1) {
+		if (com_argv[cachedir_parm + 1][0] == '-') {
 			com_cachedir[0] = 0;
 		} else {
-			strcpy(com_cachedir, com_argv[i+1]);
+			strcpy(com_cachedir, com_argv[cachedir_parm + 1]);
 		}
 	} else if (host_parms.cachedir) {
 		strcpy(com_cachedir, host_parms.cachedir);
@@ -1812,51 +1817,53 @@ void COM_InitFilesystem(void) {
 		com_cachedir[0] = 0;
 	}
 
-//
-// start up with GAMENAME by default (id1)
-//
+	// start up with GAMENAME by default (id1)
 	COM_AddGameDirectory(va("%s/"GAMENAME, basedir) );
 
+	// load rogue expansion
 	if (COM_CheckParm("-rogue")) {
 		COM_AddGameDirectory(va("%s/rogue", basedir) );
 	}
 
+	// load hipnotic expansion
 	if (COM_CheckParm("-hipnotic")) {
 		COM_AddGameDirectory(va("%s/hipnotic", basedir) );
 	}
 
 	// -game <gamedir>
 	// Adds basedir/gamedir as an override game
-	i = COM_CheckParm("-game");
+	int game_parm = COM_CheckParm("-game");
 
-	if (i && i < com_argc - 1) {
+	if (game_parm && game_parm < com_argc - 1) {
 		com_modified = true;
-		COM_AddGameDirectory(va("%s/%s", basedir, com_argv[i + 1]));
+		COM_AddGameDirectory(va("%s/%s", basedir, com_argv[game_parm + 1]));
 	}
 
 	// -path <dir or packfile> [<dir or packfile>] ...
 	// Fully specifies the exact search path, overriding the generated one
-	i = COM_CheckParm("-path");
+	int path_parm = COM_CheckParm("-path");
 
-	if (i) {
+	if (path_parm) {
 		com_modified = true;
 		com_searchpaths = NULL;
 
-		while (++i < com_argc) {
-			if (!com_argv[i] || com_argv[i][0] == '+' || com_argv[i][0] == '-') {
+		while (++path_parm < com_argc) {
+			if (!com_argv[path_parm] ||
+					com_argv[path_parm][0] == '+' ||
+					com_argv[path_parm][0] == '-') {
 				break;
 			}
 
-			search = Hunk_Alloc(sizeof(searchpath_t));
+			searchpath_t* search = Hunk_Alloc(sizeof(searchpath_t));
 
-			if (!strcmp(COM_FileExtension(com_argv[i]), "pak")) {
-				search->pack = COM_LoadPackFile(com_argv[i]);
+			if (!strcmp(COM_FileExtension(com_argv[path_parm]), "pak")) {
+				search->pack = COM_LoadPackFile(com_argv[path_parm]);
 
 				if (!search->pack) {
-					Sys_Error("Couldn't load packfile: %s", com_argv[i]);
+					Sys_Error("Couldn't load packfile: %s", com_argv[path_parm]);
 				}
 			} else {
-				strcpy(search->filename, com_argv[i]);
+				strcpy(search->filename, com_argv[path_parm]);
 			}
 
 			search->next = com_searchpaths;

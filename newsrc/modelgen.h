@@ -57,22 +57,45 @@ typedef enum { ALIAS_SINGLE=0, ALIAS_GROUP } aliasframetype_t;
 typedef enum { ALIAS_SKIN_SINGLE=0, ALIAS_SKIN_GROUP } aliasskintype_t;
 
 typedef struct {
-	int			ident;
-	int			version;
-	vec3_t		scale;
-	vec3_t		scale_origin;
-	float		boundingradius;
-	vec3_t		eyeposition;
-	int			numskins;
-	int			skinwidth;
-	int			skinheight;
-	int			numverts;
-	int			numtris;
-	int			numframes;
-	synctype_t	synctype;
-	int			flags;
-	float		size;
+	int ident;
+	int version;
+	vec3_t scale;
+	vec3_t scale_origin;
+	float boundingradius;
+	vec3_t eyeposition;
+	int numskins;
+	int skinwidth;
+	int skinheight;
+	int numverts;
+	int numtris;
+	int numframes;
+	synctype_t synctype;
+	int flags;
+	float size;
 } mdl_t;
+
+/* MDL header from http://tfc.duke.free.fr/coding/mdl-specs-en.html */
+// typedef struct mdl_header_t {
+//   int ident;            /* magic number: "IDPO" */
+//   int version;          /* version: 6 */
+//
+//   vec3_t scale;         /* scale factor */
+//   vec3_t translate;     /* translation vector */
+//   float boundingradius;
+//   vec3_t eyeposition;   /* eyes' position */
+//
+//   int num_skins;        /* number of textures */
+//   int skinwidth;        /* texture width */
+//   int skinheight;       /* texture height */
+//
+//   int num_verts;        /* number of vertices */
+//   int num_tris;         /* number of triangles */
+//   int num_frames;       /* number of frames */
+//
+//   synctype_t synctype;  /* 0 = synchron, 1 = random */
+//   int flags;            /* state flag */
+//   float size;
+// } mdl_t;
 
 // TODO: could be shorts
 

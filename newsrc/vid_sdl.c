@@ -280,7 +280,7 @@ void VID_Init(unsigned char *palette) {
 
 	vid.rowbytes = pixel_buffer.bytes_per_line;
 	vid.buffer = (pixel_t *)pixel_buffer.data;
-	vid.direct = 0;
+	vid.direct = 0;  // address of the framebuffer
 	vid.conbuffer = (pixel_t *)pixel_buffer.data;
 	vid.conrowbytes = vid.rowbytes;
 	vid.conwidth = vid.width;

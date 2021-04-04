@@ -98,8 +98,21 @@ ddef_t* pr_globaldefs
 ddef_t* pr_fielddefs
 dstatement_t* pr_statements
 globalvars_t* pr_global_struct, float* pr_globals
+int pr_edict_size (in bytes)
 
 ## Open Questions
 * what is the layout of memory?
 	* where are `pr_strings` et al in relation to the hunk?
 		* i.e. how does `ED_ParseEpair` work for strings?
+
+
+
+typedef struct {
+	int ofs_statements;
+	int ofs_globaldefs;
+	int ofs_fielddefs;
+	int ofs_functions;
+	int ofs_strings;
+	int ofs_globals;
+	int entityfields;
+} dprograms_t;

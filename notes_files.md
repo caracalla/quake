@@ -80,11 +80,19 @@ rasterization drivers
 
 
 
+### `model.h`
+
+* **Source
+
+
+
 ### `quakedef.h`
 seems like a convenience header to hold common definitions
 
 * **Source files:**
 	* `chase.c` - chase camera logic
+	* `host_cmd.c` - adds a ton of console commands in `Host_InitCommands`
+	* `host.c` -
 * **Types:**
 * **Functions:**
 
@@ -120,9 +128,9 @@ info
 * `cvar.h` (`cvar.c`) -
 * `draw.h` (`draw.c`) - functions to draw to the vid buffer outside of "refresh"
 	* **Functions:**
-		* `void Draw_Init(void)` -
-		* `void Draw_Character(int x, int y, int num)`
-		* `void Draw_DebugChar(char num)`
+		* `void Draw_Init(void)` - loads font, disc icon, and background
+		* `void Draw_Character(int x, int y, int num)` - draws a character from the font
+		* `void Draw_DebugChar(char num)` - only works with direct FB access
 		* `void Draw_Pic(int x, int y, qpic_t* pic)`
 		* `void Draw_TransPic(int x, int y, qpic_t* pic)`
 		* `void Draw_TransPicTranslate(int x, int y, qpic_t* pic, byte* translation)`
@@ -133,5 +141,10 @@ info
 		* `void Draw_Fill(int x, int y, int w, int h, int c)`
 		* `void Draw_FadeScreen(void)`
 		* `void Draw_String(int x, int y, char* str)`
-		* `qpic_t* Draw_PicFromWad(char* name)` - used to get pic lump names for init methods
-		* `qpic_t* Draw_CachePic(char* path)` -
+		* `qpic_t* Draw_PicFromWad(char* name)` - used to get pic from lump names for init methods
+		* `qpic_t* Draw_CachePic(char* path)` - loads pic, writethrough cache
+* `input.h` - mouse and keyboard input
+* `keys.h` (`keys.c`) - keyboard keys
+* `mathlib.h` (`mathlib.c`) - mostly vector math
+* `menu.h` (`menu.c`) - game menu handling (`menu.c` is huge!)
+*

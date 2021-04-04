@@ -900,7 +900,7 @@ void Host_Init(quakeparms_t *parms) {
 	V_Init();
 	Chase_Init();
 	Host_InitVCR(parms);
-	COM_Init(parms->basedir);
+	COM_Init(); // parms->basedir);
 	Host_InitLocal();
 	W_LoadWadFile("gfx.wad");
 	Key_Init();
