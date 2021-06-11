@@ -1689,7 +1689,7 @@ pack_t* COM_LoadPackFile(char* packfile) {
 		com_modified = true;
 	}
 
-	byte file_buf[1433792 + 1024];
+	// byte file_buf[1433792 + 1024];  // for dumping files, see below
 
 	// parse the directory info into the hunk
 	for (int i = 0; i < numpackfiles; i++) {
