@@ -1078,10 +1078,14 @@ void SV_SpawnServer(char* server) {
 
 	Cvar_SetValue("skill", (float)current_skill);
 
+	Con_DPrintf("SpawnServer: %s\n", "set skill");
+
 	// set up the new server
 	Host_ClearMemory();
 
 	memset(&sv, 0, sizeof(sv));
+
+	Con_DPrintf("SpawnServer: %s\n", "cleared memory");
 
 	strcpy(sv.name, server);
 
@@ -1093,6 +1097,8 @@ void SV_SpawnServer(char* server) {
 
 	// load progs to get entity field count
 	PR_LoadProgs();
+
+	Con_DPrintf("SpawnServer: %s\n", "loaded progs");
 
 	// allocate server memory
 	sv.max_edicts = MAX_EDICTS;
@@ -1110,6 +1116,8 @@ void SV_SpawnServer(char* server) {
 	sv.signon.maxsize = sizeof(sv.signon_buf);
 	sv.signon.cursize = 0;
 	sv.signon.data = sv.signon_buf;
+
+	Con_DPrintf("SpawnServer: %s\n", "set datagram stuff");
 
 	// leave slots at start for clients only
 	sv.num_edicts = svs.maxclients + 1;
@@ -1134,6 +1142,8 @@ void SV_SpawnServer(char* server) {
 		return;
 	}
 
+	Con_DPrintf("SpawnServer: %s\n", "loaded worldmodel");
+
 	sv.models[1] = sv.worldmodel;
 
 	// clear world interaction links
@@ -1148,6 +1158,8 @@ void SV_SpawnServer(char* server) {
 		sv.models[i + 1] = Mod_ForName(localmodels[i], false);
 	}
 
+	Con_DPrintf("SpawnServer: %s\n", "set model precache");
+
 	// load the rest of the entities
 	edict_t* ent = EDICT_NUM(0);
 	memset(&ent->v, 0, progs->entityfields * 4);
@@ -1157,6 +1169,14 @@ void SV_SpawnServer(char* server) {
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
+	Con_DPrintf("sv.worldmodel->name: %s\n", sv.worldmodel->name);
+	Con_DPrintf("pr_strings: %lu\n", pr_strings);
+	Con_DPrintf("sv.modelname: %lu\n", sv.modelname);
+	Con_DPrintf("sv.worldmodel->name: %lu\n", sv.worldmodel->name);
+	Con_DPrintf("ent->v.model: %d\n", ent->v.model);
+	Con_DPrintf("sv.worldmodel->name - pr_strings: %ld\n", sv.worldmodel->name - pr_strings);
+	Con_DPrintf("SpawnServer: %s\n", "loaded rest of entities");
+
 	if (coop.value) {
 		pr_global_struct->coop = coop.value;
 	} else {
@@ -1165,6 +1185,8 @@ void SV_SpawnServer(char* server) {
 
 	pr_global_struct->mapname = sv.name - pr_strings;
 
+	Con_DPrintf("SpawnServer: %s\n", "set mapname");
+
 #ifdef QUAKE2
 	pr_global_struct->startspot = sv.startspot - pr_strings;
 #endif
@@ -1172,7 +1194,11 @@ void SV_SpawnServer(char* server) {
 // serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 
+	Con_DPrintf("SpawnServer: %s\n", "about to load entities from file");
+
 	ED_LoadFromFile(sv.worldmodel->entities);
+
+	Con_DPrintf("SpawnServer: %s\n", "loaded entities from file");
 
 	sv.active = true;
 
@@ -1183,6 +1209,8 @@ void SV_SpawnServer(char* server) {
 	host_frametime = 0.1;
 	SV_Physics();
 	SV_Physics();
+
+	Con_DPrintf("SpawnServer: %s\n", "ran a couple of frames");
 
 	// create a baseline for more efficient communications
 	SV_CreateBaseline();
